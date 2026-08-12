@@ -5,7 +5,8 @@ hosted at `meet.sarathg.me` (GitHub Pages, separate repo from the main
 `sarathg.me` site).
 
 This replaces the old single-event `sarathg.me/booking.html` with a scheduler
-that supports four session types, each with its own duration and price:
+at the clean root URL `meet.sarathg.me/`, supporting four session types, each
+with its own duration and price:
 
 | Session | Duration | Price |
 |---|---|---|
@@ -16,9 +17,13 @@ that supports four session types, each with its own duration and price:
 
 ## How the pieces fit together
 
-- **Front end** (this repo, static HTML/CSS/JS) — `booking.html`, `cancel.html`,
-  `reschedule.html`, `index.html`. No build step, no framework, no dependencies
-  beyond Google Fonts and (for paid bookings) Razorpay's `checkout.js`.
+- **Front end** (this repo, static HTML/CSS/JS) — `index.html` (the booking
+  scheduler, served at the site root), `cancel/index.html`, `reschedule/index.html`.
+  Every page is reachable without a `.html` extension (`/`, `/cancel/`,
+  `/reschedule/`) using plain folders with `index.html` inside — no Jekyll, no
+  build step, no framework, no dependencies beyond Google Fonts and (for paid
+  bookings) Razorpay's `checkout.js`. `.nojekyll` at the repo root tells GitHub
+  Pages not to run these through Jekyll's Liquid processor.
 - **Backend** — `gas/Code.gs`, a Google Apps Script Web App. It owns calendar
   availability, booking creation/cancellation/reschedule, Razorpay order
   creation + payment signature verification, confirmation emails, and
@@ -55,7 +60,7 @@ Session names, durations, and prices are defined in **two places** that must
 match:
 
 - `gas/Code.gs` → `EVENT_TYPES` (price in **paise**, used for real charges)
-- `booking.html` → `EVENT_TYPES` (price in **rupees**, display only)
+- `index.html` → `EVENT_TYPES` (price in **rupees**, display only)
 
 If you change a price or add a session type, update both.
 
@@ -64,30 +69,36 @@ If you change a price or add a session type, update both.
 Near-black background, dark panel cards, warm gold accent, a serif display
 font (Playfair Display) for headings/names and a clean sans-serif (Inter)
 for body/UI text — matching the tone of the existing `sarathg.me` site and
-its confirmation emails. All four pages (`booking`, `cancel`, `reschedule`,
-`index`) share the same CSS variables so the product feels like one thing as
-you move between them.
+its confirmation emails. All three pages (root, `cancel/`, `reschedule/`)
+share the same CSS variables so the product feels like one thing as you move
+between them.
 
 ## Local development
 
-Everything is static — open `booking.html` directly in a browser, or serve
+Everything is static — open `index.html` directly in a browser, or serve
 the folder with any static file server. You'll need a real `config.js` (see
 `config.example.js`) pointing at a deployed Apps Script backend for the
 scheduling flow to actually work end-to-end; without it, the UI renders but
 network calls will fail.
 
+Note: `config.js` is referenced from every page as an absolute path
+(`/config.js`), since `cancel/` and `reschedule/` sit one directory level
+below the root. If you serve this locally with a static file server (rather
+than opening the files directly), serve it rooted at the repo folder so
+`/config.js` resolves.
+
 ## Repo layout
 
 ```
 meet-with-sarath/
-  booking.html         Main scheduler (4 session types → date → time → details → [payment] → confirmed)
-  cancel.html           Cancel a booking via link from the confirmation email
-  reschedule.html        Move a booking to a new date/time
-  index.html            Redirects to booking.html (subdomain root)
-  config.js              Your real deployment values — gitignored, not committed
-  config.example.js      Placeholder shape of config.js, committed
-  gas/Code.gs            Backend reference copy (deploy manually — see SETUP.md)
-  SETUP.md                Manual deployment steps (Apps Script, GitHub Pages, DNS, cutover)
+  index.html             Main scheduler, served at the site root (4 session types → date → time → details → [payment] → confirmed)
+  cancel/index.html       Cancel a booking via link from the confirmation email — served at /cancel/
+  reschedule/index.html    Move a booking to a new date/time — served at /reschedule/
+  config.js               Your real deployment values — gitignored, not committed
+  config.example.js       Placeholder shape of config.js, committed
+  gas/Code.gs              Backend reference copy (deploy manually — see SETUP.md)
+  .nojekyll                Empty file — tells GitHub Pages to skip Jekyll processing
+  SETUP.md                  Manual deployment steps (Apps Script, GitHub Pages, DNS, cutover)
 ```
 
 See [SETUP.md](SETUP.md) for everything that still needs to happen outside

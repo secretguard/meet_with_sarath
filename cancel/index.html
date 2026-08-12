@@ -116,7 +116,7 @@
           <span class="btn-label">Yes, cancel booking</span>
           <div class="spinner"></div>
         </button>
-        <a class="btn-back" href="booking.html">Keep my booking</a>
+        <a class="btn-back" href="/">Keep my booking</a>
       </div>
     </div>
 
@@ -129,7 +129,7 @@
       </div>
       <h1>Booking Cancelled</h1>
       <p class="subtitle" id="success-msg">Your booking has been cancelled. A confirmation email has been sent to you.</p>
-      <a class="btn-book" href="booking.html">Book a new time</a>
+      <a class="btn-book" href="/">Book a new time</a>
     </div>
 
     <!-- ERROR -->
@@ -143,7 +143,7 @@
       </div>
       <h1>Something went wrong</h1>
       <p class="subtitle" id="error-msg">This booking no longer exists or the link has expired.</p>
-      <a class="btn-book" href="booking.html">Back to booking</a>
+      <a class="btn-book" href="/">Back to booking</a>
     </div>
 
     <!-- FOOTER -->
@@ -159,7 +159,7 @@
 </div>
 </main>
 
-<script src="config.js"></script>
+<script src="/config.js"></script>
 <script>
   const params  = new URLSearchParams(window.location.search);
   const eventId = params.get('eventId');

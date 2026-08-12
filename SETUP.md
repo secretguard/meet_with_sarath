@@ -38,6 +38,15 @@ live, use **Deploy → Manage deployments → Edit → New version**. Editing th
 script alone does not update the live `/exec` URL's behavior until you cut a
 new version.
 
+> **⚠️ If you already deployed an earlier version of `Code.gs`:** the copy in
+> this repo now builds cancel/reschedule links as `https://meet.sarathg.me/cancel/`
+> and `https://meet.sarathg.me/reschedule/` (clean URLs, no `.html`, correct
+> subdomain) instead of the old `sarathg.me/cancel.html` /
+> `sarathg.me/reschedule.html`. You need to **re-paste this file into the live
+> Apps Script project and cut a new deployment version** (see above) for
+> future confirmation/cancellation/reminder emails to actually use the
+> corrected links. This repo cannot deploy that for you.
+
 ## 2. Add the two time-driven triggers
 
 Apps Script editor → **Triggers** (clock icon in the left sidebar) → **Add
@@ -72,6 +81,17 @@ This repo is currently local-only (`git init`, no remote). When you're ready:
    ```
    (GitHub Pages reads this file to know which custom domain to serve.)
 
+This repo already ships a `.nojekyll` file at the root. GitHub Pages runs
+every repo through Jekyll by default, even with no `_config.yml` — `.nojekyll`
+disables that, so the plain HTML/CSS/JS here is served byte-for-byte as
+committed (nothing tries to Liquid-process the `{{ }}`-free but still
+plain-text JS in these pages). No build step, no Jekyll config — this repo
+stays a pure static site.
+
+Because every page lives at `path/index.html` (`/`, `/cancel/`,
+`/reschedule/`), GitHub Pages serves clean extension-less URLs automatically
+— no extra rewrite rules needed.
+
 ## 4. DNS (Cloudflare)
 
 This is a dashboard step — nothing to script. In your Cloudflare DNS
@@ -96,7 +116,7 @@ ideally a real ₹1 test-mode paid booking) and are happy with it.
 
 - [ ] Replace "Book a consultation" / booking links in the `sarathg.me` nav
       and footer (across all pages that link to the old booking flow) to
-      point at `https://meet.sarathg.me` instead of `sarathg.me/booking.html`.
+      point at `https://meet.sarathg.me/` instead of `sarathg.me/booking.html`.
 - [ ] Decide what happens to the old `sarathg.me/booking.html`: leave it as
       a dead page, replace its content with a redirect/forwarding notice
       pointing to `meet.sarathg.me`, or remove it outright.
@@ -105,10 +125,11 @@ ideally a real ₹1 test-mode paid booking) and are happy with it.
       cancel/reschedule links that silently break — either keep that old
       deployment alive read-only for existing bookings, or migrate/honor
       those links.
-- [ ] Once traffic has fully moved, consider updating `buildCancelUrl` /
-      `buildRescheduleUrl` in `gas/Code.gs` (currently pointed at
-      `sarathg.me/cancel.html` and `sarathg.me/reschedule.html`) to point at
-      `meet.sarathg.me` instead, and redeploy.
+- [ ] `gas/Code.gs`'s `buildCancelUrl` / `buildRescheduleUrl` already point at
+      `meet.sarathg.me/cancel/` and `meet.sarathg.me/reschedule/` in this
+      repo — the only remaining step is the re-deploy called out in Step 1
+      above (re-paste + new deployment version) so the *live* Apps Script
+      project actually uses these corrected links.
 
 None of this is done automatically — it's a checklist for you to work
 through once you've verified the new site yourself.

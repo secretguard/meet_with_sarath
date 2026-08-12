@@ -3,17 +3,683 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meet with Sarath</title>
-<link rel="canonical" href="booking.html">
+<title>Meet with Sarath — Book a Session</title>
+<meta name="description" content="Book time with Sarath G — scoping calls, career advice, mentorship, and resume reviews.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{ --bg:#0a0e14; --text:#e6edf3; --accent:#cda868; --muted:#8b98a5; }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center;}
-  a{color:var(--accent);}
-  p{color:var(--muted);font-size:14px;}
+  :root{
+    --bg:#0a0e14; --panel:#10161f; --line:#1f2833;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+    --accent-soft:#cda86814; --accent-dim:#cda86833;
+    --avatar-bg:#1c4d3a; --red:#e0685c; --red-dim:#e0685c33;
+    --serif:'Playfair Display', Georgia, serif;
+    --sans:'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --radius:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+  .card{width:100%;max-width:920px;display:flex;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel);animation:fadeUp .5s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+  /* LEFT PANEL */
+  .left{width:270px;flex-shrink:0;background:#0d131c;border-right:1px solid var(--line);padding:36px 26px;display:flex;flex-direction:column;gap:24px;}
+  .avatar{width:52px;height:52px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:19px;font-weight:600;color:var(--accent);flex-shrink:0;}
+  .host-name{font-family:var(--serif);font-size:23px;font-weight:500;color:#fff;line-height:1.15;margin-bottom:4px;}
+  .host-role{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);}
+  .divider{height:1px;background:var(--line);}
+  .meta-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .meta-list{display:flex;flex-direction:column;gap:11px;}
+  .meta-item{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);}
+  .meta-item strong{color:var(--text);font-weight:500;}
+  .meta-icon{width:15px;height:15px;flex-shrink:0;color:var(--accent);}
+  .desc{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--muted);line-height:1.7;}
+  .left-footer{margin-top:auto;font-size:10px;color:var(--muted);letter-spacing:.05em;border-top:1px solid var(--line);padding-top:18px;line-height:1.8;}
+  .tz-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--accent-dim);border-radius:20px;font-size:10px;color:var(--accent);background:var(--accent-soft);margin-top:8px;}
+  .tz-badge svg{width:10px;height:10px;flex-shrink:0;}
+
+  /* RIGHT PANEL */
+  .right{flex:1;padding:36px 34px;display:flex;flex-direction:column;min-width:0;}
+  .step{display:flex;flex-direction:column;gap:14px;padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:26px;transition:opacity .25s;}
+  .step:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  .step.locked{opacity:.3;pointer-events:none;}
+  .step-head{display:flex;align-items:center;gap:10px;}
+  .step-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);flex-shrink:0;}
+  .step-title{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+
+  /* EVENT TYPE CARDS */
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .type-card{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;cursor:pointer;background:#0d131c;transition:all .15s;}
+  .type-card:hover{border-color:var(--accent-dim);}
+  .type-card.selected{border-color:var(--accent);background:var(--accent-soft);}
+  .type-name{font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:6px;}
+  .type-card.selected .type-name{color:var(--accent);}
+  .type-meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);}
+  .type-price{color:var(--accent);font-weight:500;}
+
+  /* CALENDAR */
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .cal-month{font-family:var(--serif);font-size:18px;font-weight:500;color:var(--text);}
+  .nav-btn{background:none;border:1px solid var(--line);color:var(--muted);width:26px;height:26px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
+  .nav-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .nav-btn:disabled{opacity:.3;cursor:default;}
+  .nav-btn svg{width:12px;height:12px;}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+  .wd{text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:3px 0;}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:6px;cursor:pointer;color:var(--text);border:1px solid transparent;transition:all .15s;position:relative;}
+  .day:hover:not(.empty):not(.past){border-color:var(--accent);color:var(--accent);}
+  .day.selected{background:var(--accent);color:var(--bg)!important;border-color:var(--accent);font-weight:600;}
+  .day.past{color:#2a323c;cursor:default;}
+  .day.today:not(.selected)::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--accent);}
+  .day.empty{cursor:default;}
+
+  /* SLOTS */
+  .slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+  .slot{padding:9px 6px;border:1px solid var(--line);border-radius:7px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;background:#0d131c;}
+  .slot:hover{border-color:var(--accent);color:var(--text);}
+  .slot.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .no-slots,.loading-slots{font-size:12px;color:var(--muted);font-style:italic;padding:6px 0;}
+  .loading-slots{display:flex;align-items:center;gap:8px;font-style:normal;}
+  .spinner{width:12px;height:12px;border:1.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .sel-summary{display:none;font-size:11.5px;color:var(--accent);padding:9px 12px;border:1px solid var(--accent-dim);border-radius:8px;background:var(--accent-soft);line-height:1.6;}
+  .sel-summary.show{display:block;}
+
+  /* FORM */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field.full{grid-column:1/-1;}
+  .field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  input[type="text"],input[type="email"],textarea{background:#0d131c;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;}
+  input:focus,textarea:focus{border-color:var(--accent);}
+  input::placeholder,textarea::placeholder{color:var(--muted);}
+  textarea{resize:none;height:70px;line-height:1.6;}
+
+  .submit-btn{width:100%;margin-top:8px;padding:13px;background:var(--accent);border:none;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#0a0e14;font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .submit-btn:hover{opacity:.88;}
+  .submit-btn:active{transform:scale(.99);}
+  .submit-btn:disabled{opacity:.35;cursor:default;}
+  .btn-spinner{width:12px;height:12px;border:1.5px solid #0a0e1444;border-top-color:#0a0e14;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+  .submit-btn.loading .btn-spinner{display:block;}
+  .submit-btn.loading .btn-text{opacity:.6;}
+
+  .error-msg{display:none;font-size:11.5px;color:var(--red);padding:9px 12px;border:1px solid var(--red-dim);border-radius:7px;background:#e0685c0d;}
+  .error-msg.show{display:block;}
+  .payment-note{font-size:10.5px;color:var(--muted);text-align:center;margin-top:2px;}
+
+  .success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:60px 40px;min-height:340px;animation:fadeUp .5s ease both;}
+  .success-screen.show{display:flex;}
+  .success-check{width:54px;height:54px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;}
+  .success-check svg{color:var(--accent);width:23px;height:23px;}
+  .success-title{font-family:var(--serif);font-size:26px;font-weight:500;color:#fff;line-height:1.2;}
+  .success-detail{font-size:13px;color:var(--muted);line-height:1.85;max-width:360px;}
+  .success-detail strong{color:var(--text);}
+  .success-detail .gold{color:var(--accent);}
+  .success-note{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+  .success-new{margin-top:6px;background:none;border:1px solid var(--line);border-radius:7px;padding:10px 20px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;}
+  .success-new:hover{border-color:var(--accent);color:var(--accent);}
+
+  @media (max-width:680px){
+    .card{flex-direction:column;}
+    .left{width:100%;border-right:none;border-bottom:1px solid var(--line);}
+    .right{padding:28px 20px;}
+    .type-grid{grid-template-columns:1fr;}
+    .slots-grid{grid-template-columns:repeat(3,1fr);}
+    .form-grid{grid-template-columns:1fr;}
+    .field.full{grid-column:auto;}
+  }
 </style>
-<script>window.location.replace('booking.html');</script>
 </head>
 <body>
-  <p>Redirecting to <a href="booking.html">Meet with Sarath</a>&hellip;</p>
+<main>
+<div class="page">
+  <div class="card">
+
+    <!-- LEFT -->
+    <div class="left">
+      <div class="avatar">SG</div>
+      <div>
+        <div class="host-name">Sarath G</div>
+        <div class="host-role">Cyber Security Consultant</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="meta-label">Session Details</div>
+        <div class="meta-list" id="metaList">
+          <div class="meta-item">
+            <svg class="meta-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="metaDuration">Select a session type</span>
+          </div>
+          <div class="meta-item">
+            <svg class="meta-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M15 10l4.553-2.069A1 1 0 0121 8.869v6.262a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+            Google Meet
+          </div>
+          <div class="meta-item">
+            <svg class="meta-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Mon – Sat, 9 AM – 8 PM IST
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="desc" id="descText">"Pick a session type to see what it's about."</div>
+      <div class="left-footer">
+        Host timezone: IST (India)<br>
+        <div class="tz-badge" id="clientTzBadge">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="clientTzLabel">Detecting…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right" id="rightPanel">
+
+      <!-- STEP 0: EVENT TYPE -->
+      <div class="step" id="step0">
+        <div class="step-head">
+          <div class="step-num">01</div>
+          <div class="step-title">Choose a session type</div>
+        </div>
+        <div class="type-grid" id="typeGrid"></div>
+      </div>
+
+      <!-- STEP 1: DATE -->
+      <div class="step locked" id="step1">
+        <div class="step-head">
+          <div class="step-num">02</div>
+          <div class="step-title">Select a date</div>
+        </div>
+        <div>
+          <div class="cal-nav">
+            <button class="nav-btn" id="prevBtn" onclick="changeMonth(-1)" aria-label="Previous month">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div class="cal-month" id="monthLabel"></div>
+            <button class="nav-btn" onclick="changeMonth(1)" aria-label="Next month">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="weekdays">
+            <div class="wd">Su</div><div class="wd">Mo</div><div class="wd">Tu</div>
+            <div class="wd">We</div><div class="wd">Th</div><div class="wd">Fr</div><div class="wd">Sa</div>
+          </div>
+          <div class="days" id="calDays"></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: TIME -->
+      <div class="step locked" id="step2">
+        <div class="step-head">
+          <div class="step-num">03</div>
+          <div class="step-title">Pick a time <span id="slotDateLabel" style="color:var(--accent);margin-left:6px;font-size:9px;letter-spacing:.08em;"></span></div>
+        </div>
+        <div id="slotsContainer">
+          <div class="no-slots">Select a date first</div>
+        </div>
+      </div>
+
+      <!-- STEP 3: DETAILS -->
+      <div class="step locked" id="step3">
+        <div class="step-head">
+          <div class="step-num">04</div>
+          <div class="step-title">Your details</div>
+        </div>
+        <div class="sel-summary" id="selSummary"></div>
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="fname">First name</label>
+            <input type="text" id="fname" placeholder="First name" autocomplete="given-name">
+          </div>
+          <div class="field">
+            <label class="field-label" for="lname">Last name</label>
+            <input type="text" id="lname" placeholder="Last name" autocomplete="family-name">
+          </div>
+          <div class="field full">
+            <label class="field-label" for="email">Email address</label>
+            <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
+          </div>
+          <div class="field full">
+            <label class="field-label" for="topic" id="topicLabel">What would you like to discuss?</label>
+            <textarea id="topic" placeholder="Briefly describe your challenge or goal…"></textarea>
+          </div>
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
+          <span class="btn-text" id="submitBtnText">Confirm Booking</span>
+          <div class="btn-spinner"></div>
+        </button>
+        <div class="payment-note" id="paymentNote" style="display:none;">Payment is handled securely by Razorpay.</div>
+      </div>
+
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-check">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-title">You're confirmed.</div>
+      <div class="success-detail" id="successDetail"></div>
+      <div class="success-note">A calendar invite and confirmation email are on their way</div>
+      <button class="success-new" onclick="resetPage()">Book another session</button>
+    </div>
+
+  </div>
+</div>
+</main>
+
+<script src="/config.js"></script>
+<script>
+  // ── EVENT TYPE CATALOGUE ────────────────────────────────────
+  // Keep this in sync with EVENT_TYPES in gas/Code.gs.
+  // price is in INR rupees here (display only) — Code.gs stores price in paise
+  // and is the source of truth for what actually gets charged.
+  const EVENT_TYPES = {
+    'scoping-call': {
+      label: 'Scoping Call',
+      duration: 30,
+      price: 0,
+      description: 'A focused 30-minute conversation to understand your challenge and explore how we might work together.'
+    },
+    'career-advice': {
+      label: 'Basic Career Advice',
+      duration: 15,
+      price: 0,
+      description: 'A quick, focused 15-minute career conversation.'
+    },
+    'mentorship': {
+      label: 'Mentorship Session',
+      duration: 60,
+      price: 2500,
+      description: 'A 1-hour 1:1 mentorship session.'
+    },
+    'resume-review': {
+      label: 'Resume Review & Career Advice',
+      duration: 45,
+      price: 1500,
+      description: 'An in-depth resume review plus tailored career advice.'
+    }
+  };
+
+  const TOPIC_LABELS = {
+    'resume-review': 'What would you like feedback on?'
+  };
+  const DEFAULT_TOPIC_LABEL = 'What would you like to discuss?';
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function formatPrice(rupees) {
+    return rupees > 0 ? '₹' + rupees.toLocaleString('en-IN') : 'Free';
+  }
+
+  // ── TIMEZONE DISPLAY (informational only — all times sent/shown are IST) ──
+  try {
+    const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const isIST = clientTz === 'Asia/Kolkata' || clientTz === 'Asia/Calcutta';
+    document.getElementById('clientTzLabel').textContent = isIST ? 'Showing times in IST' : `Times shown in IST (your zone: ${clientTz})`;
+  } catch (e) {
+    document.getElementById('clientTzLabel').textContent = 'Times shown in IST';
+  }
+
+  // ── STATE ────────────────────────────────────────────────────
+  let selectedType = null;   // event type id
+  let today    = new Date();
+  let curYear  = today.getFullYear();
+  let curMonth = today.getMonth();
+  let selDate  = null;
+  let selSlot  = null;
+  let cachedSlots = {};
+
+  // ── STEP HELPERS ─────────────────────────────────────────────
+  function lock(id)   { document.getElementById(id).classList.add('locked'); }
+  function unlock(id) { document.getElementById(id).classList.remove('locked'); }
+
+  // ── EVENT TYPE CARDS ─────────────────────────────────────────
+  function renderTypeGrid() {
+    const grid = document.getElementById('typeGrid');
+    grid.innerHTML = '';
+    Object.keys(EVENT_TYPES).forEach(id => {
+      const type = EVENT_TYPES[id];
+      const card = document.createElement('div');
+      card.className = 'type-card' + (selectedType === id ? ' selected' : '');
+      card.innerHTML = `
+        <div class="type-name">${type.label}</div>
+        <div class="type-meta">
+          <span>${type.duration} min</span>
+          <span class="type-price">${formatPrice(type.price)}</span>
+        </div>`;
+      card.onclick = () => selectType(id);
+      grid.appendChild(card);
+    });
+  }
+
+  function selectType(id) {
+    selectedType = id;
+    const type = EVENT_TYPES[id];
+    renderTypeGrid();
+
+    document.getElementById('metaDuration').innerHTML = `<strong>${type.duration} min</strong> · ${formatPrice(type.price)}`;
+    document.getElementById('descText').textContent = `"${type.description}"`;
+    document.getElementById('topicLabel').textContent = TOPIC_LABELS[id] || DEFAULT_TOPIC_LABEL;
+
+    const submitText = document.getElementById('submitBtnText');
+    const paymentNote = document.getElementById('paymentNote');
+    if (type.price > 0) {
+      submitText.textContent = `Confirm & Pay ${formatPrice(type.price)}`;
+      paymentNote.style.display = 'block';
+    } else {
+      submitText.textContent = 'Confirm Booking';
+      paymentNote.style.display = 'none';
+    }
+
+    // reset downstream state whenever the type changes
+    selDate = null;
+    selSlot = null;
+    cachedSlots = {};
+    unlock('step1');
+    lock('step2');
+    lock('step3');
+    document.getElementById('selSummary').classList.remove('show');
+    document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
+    document.getElementById('slotDateLabel').textContent = '';
+    renderCal();
+  }
+
+  // ── CALENDAR ─────────────────────────────────────────────────
+  function renderCal() {
+    document.getElementById('monthLabel').textContent = MONTHS[curMonth] + ' ' + curYear;
+    const grid = document.getElementById('calDays');
+    grid.innerHTML = '';
+    const first = new Date(curYear, curMonth, 1).getDay();
+    const total = new Date(curYear, curMonth + 1, 0).getDate();
+
+    for (let i = 0; i < first; i++) {
+      const d = document.createElement('div');
+      d.className = 'day empty';
+      grid.appendChild(d);
+    }
+
+    for (let i = 1; i <= total; i++) {
+      const d = document.createElement('div');
+      const dt = new Date(curYear, curMonth, i);
+      const isPast  = dt < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const isToday = dt.toDateString() === today.toDateString();
+      const isSel   = selDate && dt.toDateString() === selDate.toDateString();
+
+      d.className = 'day';
+      d.textContent = i;
+      if (isPast) d.classList.add('past');
+      if (isToday) d.classList.add('today');
+      if (isSel) d.classList.add('selected');
+
+      if (!isPast) d.onclick = () => selectDate(new Date(curYear, curMonth, i));
+      grid.appendChild(d);
+    }
+
+    document.getElementById('prevBtn').disabled =
+      curYear === today.getFullYear() && curMonth === today.getMonth();
+  }
+
+  function changeMonth(dir) {
+    curMonth += dir;
+    if (curMonth > 11) { curMonth = 0; curYear++; }
+    if (curMonth < 0)  { curMonth = 11; curYear--; }
+    renderCal();
+  }
+
+  function dateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  // ── DATE / SLOT SELECTION ────────────────────────────────────
+  function selectDate(date) {
+    selDate = date;
+    selSlot = null;
+    renderCal();
+    unlock('step2');
+    lock('step3');
+    document.getElementById('selSummary').classList.remove('show');
+    loadSlots(date);
+  }
+
+  async function loadSlots(date) {
+    const key = dateKey(date);
+    const cont = document.getElementById('slotsContainer');
+    document.getElementById('slotDateLabel').textContent =
+      date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+
+    const cacheKey = key + ':' + selectedType;
+    if (cachedSlots[cacheKey]) { renderSlots(cachedSlots[cacheKey]); return; }
+
+    cont.innerHTML = '<div class="loading-slots"><div class="spinner"></div> Checking availability…</div>';
+
+    try {
+      const url = `${CONFIG.API_URL}?date=${encodeURIComponent(key)}&eventType=${encodeURIComponent(selectedType)}`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      cachedSlots[cacheKey] = data.slots || [];
+      renderSlots(cachedSlots[cacheKey]);
+    } catch (err) {
+      cont.innerHTML = '<div class="no-slots">Could not load availability. Please try again.</div>';
+    }
+  }
+
+  function renderSlots(slots) {
+    const cont = document.getElementById('slotsContainer');
+    if (!slots || slots.length === 0) {
+      cont.innerHTML = '<div class="no-slots">No availability on this day — please pick another date.</div>';
+      return;
+    }
+    const grid = document.createElement('div');
+    grid.className = 'slots-grid';
+    slots.forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'slot' + (selSlot === t ? ' selected' : '');
+      el.textContent = t;
+      el.onclick = () => selectSlot(t);
+      grid.appendChild(el);
+    });
+    cont.innerHTML = '';
+    cont.appendChild(grid);
+  }
+
+  function selectSlot(t) {
+    selSlot = t;
+    renderSlots(cachedSlots[dateKey(selDate) + ':' + selectedType]);
+    unlock('step3');
+
+    const type = EVENT_TYPES[selectedType];
+    const summary = document.getElementById('selSummary');
+    summary.textContent = `${type.label}  ·  ${fmtDate(selDate)}  ·  ${selSlot} IST  ·  ${type.duration} min`;
+    summary.classList.add('show');
+  }
+
+  // ── FORM VALIDATION ──────────────────────────────────────────
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function clearError() {
+    document.getElementById('errorMsg').classList.remove('show');
+  }
+
+  function setSubmitLoading(loading) {
+    const btn = document.getElementById('submitBtn');
+    btn.classList.toggle('loading', loading);
+    btn.disabled = loading;
+  }
+
+  function validateForm() {
+    const fname = document.getElementById('fname').value.trim();
+    const email = document.getElementById('email').value.trim();
+    if (!selectedType) { showError('Please choose a session type.'); return null; }
+    if (!fname) { showError('Please enter your first name.'); return null; }
+    if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return null; }
+    if (!selDate || !selSlot) { showError('Please select a date and time.'); return null; }
+
+    const lname = document.getElementById('lname').value.trim();
+    const topic = document.getElementById('topic').value.trim();
+    return {
+      date: dateKey(selDate),
+      time: selSlot,
+      name: (fname + ' ' + lname).trim(),
+      email: email,
+      topic: topic,
+      eventType: selectedType
+    };
+  }
+
+  // ── SUBMIT: routes to free booking or paid (Razorpay) flow ───
+  function handleSubmit() {
+    clearError();
+    const payload = validateForm();
+    if (!payload) return;
+
+    const type = EVENT_TYPES[selectedType];
+    if (type.price > 0) {
+      startPaidBooking(payload, type);
+    } else {
+      submitBooking(payload);
+    }
+  }
+
+  // ── FREE BOOKING ──────────────────────────────────────────────
+  async function submitBooking(payload) {
+    setSubmitLoading(true);
+    try {
+      const res  = await fetch(CONFIG.API_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.success) {
+        showSuccess(payload, data.eventId);
+      } else {
+        showError(data.error || 'Something went wrong. Please try again.');
+        setSubmitLoading(false);
+      }
+    } catch (err) {
+      showError('Network error. Please check your connection and try again.');
+      setSubmitLoading(false);
+    }
+  }
+
+  // ── PAID BOOKING (Razorpay) ──────────────────────────────────
+  let razorpayScriptPromise = null;
+  function loadRazorpayScript() {
+    if (razorpayScriptPromise) return razorpayScriptPromise;
+    razorpayScriptPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Could not load payment gateway'));
+      document.head.appendChild(script);
+    });
+    return razorpayScriptPromise;
+  }
+
+  async function startPaidBooking(payload, type) {
+    setSubmitLoading(true);
+    try {
+      await loadRazorpayScript();
+
+      const orderRes = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'create-order', eventType: payload.eventType })
+      });
+      const order = await orderRes.json();
+      if (order.error || !order.orderId) {
+        showError(order.error || 'Could not start payment. Please try again.');
+        setSubmitLoading(false);
+        return;
+      }
+
+      const options = {
+        key: CONFIG.RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'Meet with Sarath',
+        description: type.label,
+        prefill: { name: payload.name, email: payload.email },
+        theme: { color: '#cda868' },
+        handler: function (response) {
+          submitBooking({
+            ...payload,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature
+          });
+        },
+        modal: {
+          ondismiss: function () {
+            setSubmitLoading(false);
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        showError('Payment failed: ' + (response.error && response.error.description ? response.error.description : 'please try again.'));
+        setSubmitLoading(false);
+      });
+      rzp.open();
+      // Checkout modal is now driving the flow — button stays in loading
+      // state until the modal is dismissed or the handler fires.
+    } catch (err) {
+      showError('Could not start payment. Please try again.');
+      setSubmitLoading(false);
+    }
+  }
+
+  // ── SUCCESS ───────────────────────────────────────────────────
+  function showSuccess(payload, eventId) {
+    document.getElementById('rightPanel').style.display = 'none';
+    const sc = document.getElementById('successScreen');
+    sc.classList.add('show');
+
+    const type = EVENT_TYPES[payload.eventType];
+    document.getElementById('successDetail').innerHTML =
+      `<strong>${payload.name}</strong>, your ${type.label} with Sarath G is set for<br>
+       <span class="gold">${fmtDate(selDate)} at ${selSlot} IST</span>.<br><br>
+       A confirmation email is on its way to <strong>${payload.email}</strong>.`;
+  }
+
+  function resetPage() {
+    selectedType = null;
+    selDate = null;
+    selSlot = null;
+    cachedSlots = {};
+    document.getElementById('fname').value = '';
+    document.getElementById('lname').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('topic').value = '';
+    document.getElementById('successScreen').classList.remove('show');
+    document.getElementById('rightPanel').style.display = 'flex';
+    document.getElementById('metaDuration').textContent = 'Select a session type';
+    document.getElementById('descText').textContent = '"Pick a session type to see what it\'s about."';
+    lock('step1');
+    lock('step2');
+    lock('step3');
+    document.getElementById('selSummary').classList.remove('show');
+    document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
+    document.getElementById('slotDateLabel').textContent = '';
+    setSubmitLoading(false);
+    clearError();
+    renderTypeGrid();
+    renderCal();
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────
+  renderTypeGrid();
+  renderCal();
+</script>
 </body>
 </html>
