@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reschedule — Meet with Sarath</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#10161f; --line:#1f2833;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+    --accent-soft:#cda86814; --accent-dim:#cda86833;
+    --avatar-bg:#1c4d3a; --red:#e0685c; --red-dim:#e0685c33;
+    --serif:'Playfair Display', Georgia, serif;
+    --sans:'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+  .card{width:100%;max-width:520px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:40px 36px;animation:fadeUp .5s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+  .host-row{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+  .host-avatar{width:38px;height:38px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:14px;font-weight:600;color:var(--accent);flex-shrink:0;}
+  .host-name{font-size:13px;color:var(--text);}
+  .host-role{font-size:10px;color:var(--muted);letter-spacing:.05em;}
+
+  h1{font-family:var(--serif);font-size:24px;font-weight:500;color:#fff;margin:0 0 6px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 24px;line-height:1.7;}
+  .current{background:#0d131c;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:var(--muted);}
+  .current b{color:var(--text);}
+
+  label{display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .cal-month{font-family:var(--serif);font-size:17px;font-weight:500;color:var(--text);}
+  .nav-btn{background:none;border:1px solid var(--line);color:var(--muted);width:26px;height:26px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
+  .nav-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .nav-btn svg{width:12px;height:12px;}
+
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+  .wd{text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:3px 0;}
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:22px;}
+  .cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#0d131c;color:var(--muted);font-size:12px;cursor:pointer;border:1px solid transparent;transition:all .15s;}
+  .cal-cell:hover{border-color:var(--accent);color:var(--accent);}
+  .cal-cell.sel{background:var(--accent);color:var(--bg);font-weight:600;border-color:var(--accent);}
+
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:22px;}
+  .slot{padding:10px;border:1px solid var(--line);border-radius:7px;text-align:center;font-size:12.5px;cursor:pointer;background:#0d131c;color:var(--muted);transition:all .15s;}
+  .slot:hover{border-color:var(--accent);color:var(--text);}
+  .slot.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .slot.empty{grid-column:1/-1;color:var(--muted);font-size:12px;text-align:left;padding:0;background:none;border:none;cursor:default;font-style:italic;}
+
+  button.confirm-btn{width:100%;padding:13px;border:none;border-radius:8px;background:var(--accent);color:var(--bg);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--sans);transition:opacity .2s;}
+  button.confirm-btn:hover{opacity:.88;}
+  button.confirm-btn:disabled{opacity:.35;cursor:default;}
+
+  .success{text-align:center;padding:20px 0;}
+  .success-check{width:54px;height:54px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+  .success-check svg{width:22px;height:22px;color:var(--accent);}
+  .success h2{color:#fff;font-family:var(--serif);font-size:24px;font-weight:500;margin:0 0 10px;}
+  .success p{color:var(--muted);font-size:13px;line-height:1.7;}
+
+  .err{color:var(--red);font-size:11.5px;margin-top:12px;text-align:center;padding:9px 12px;border:1px solid var(--red-dim);border-radius:7px;background:#e0685c0d;display:none;}
+  .err.show{display:block;}
+</style>
+</head>
+<body>
+<main>
+<div class="page">
+  <div class="card" id="app">
+    <div class="host-row">
+      <div class="host-avatar">SG</div>
+      <div>
+        <div class="host-name">Sarath G</div>
+        <div class="host-role">Cyber Security Consultant</div>
+      </div>
+    </div>
+
+    <h1>Reschedule your booking</h1>
+    <p class="sub">Pick a new date and time. Your original booking stays reserved until you confirm the new one.</p>
+    <div class="current" id="currentBox">Loading your booking…</div>
+
+    <div id="pickerBox" style="display:none;">
+      <label>Select a new date</label>
+      <div class="cal-nav">
+        <button class="nav-btn" id="prevBtn" onclick="changeMonth(-1)" aria-label="Previous month">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="cal-month" id="monthLabel"></div>
+        <button class="nav-btn" onclick="changeMonth(1)" aria-label="Next month">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="weekdays">
+        <div class="wd">Su</div><div class="wd">Mo</div><div class="wd">Tu</div>
+        <div class="wd">We</div><div class="wd">Th</div><div class="wd">Fr</div><div class="wd">Sa</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <label>Pick a time</label>
+      <div class="slots" id="slotGrid"><div class="slot empty">Select a date first</div></div>
+      <button class="confirm-btn" id="confirmBtn" disabled>Confirm new time</button>
+      <div class="err" id="errBox"></div>
+    </div>
+
+    <div class="success" id="successBox" style="display:none;">
+      <div class="success-check">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>You're rescheduled.</h2>
+      <p id="successText"></p>
+    </div>
+  </div>
+</div>
+</main>
+
+<script src="config.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const eventId   = params.get('eventId');
+  const email     = params.get('email');
+  const name      = params.get('name');
+  const eventType = params.get('eventType') || 'scoping-call';
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let today    = new Date();
+  let curYear  = today.getFullYear();
+  let curMonth = today.getMonth();
+  let selectedDate = null;
+  let selectedTime = null;
+
+  document.getElementById('currentBox').innerHTML =
+    `<b>${name || 'Your booking'}</b><br>Choose a new slot below to move this booking.`;
+
+  function dateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function renderCalendar() {
+    document.getElementById('monthLabel').textContent = MONTHS[curMonth] + ' ' + curYear;
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    const first = new Date(curYear, curMonth, 1).getDay();
+    const total = new Date(curYear, curMonth + 1, 0).getDate();
+
+    for (let i = 0; i < first; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-cell';
+      d.style.visibility = 'hidden';
+      grid.appendChild(d);
+    }
+
+    for (let i = 1; i <= total; i++) {
+      const dt = new Date(curYear, curMonth, i);
+      const isPast = dt < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      cell.textContent = i;
+      const iso = dateKey(dt);
+      if (isPast) {
+        cell.style.opacity = '.3';
+        cell.style.pointerEvents = 'none';
+      } else {
+        cell.onclick = () => selectDate(iso, cell);
+      }
+      if (selectedDate === iso) cell.classList.add('sel');
+      grid.appendChild(cell);
+    }
+
+    document.getElementById('prevBtn').disabled =
+      curYear === today.getFullYear() && curMonth === today.getMonth();
+  }
+
+  function changeMonth(dir) {
+    curMonth += dir;
+    if (curMonth > 11) { curMonth = 0; curYear++; }
+    if (curMonth < 0)  { curMonth = 11; curYear--; }
+    renderCalendar();
+  }
+
+  function selectDate(iso, cellEl) {
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('sel'));
+    cellEl.classList.add('sel');
+    selectedDate = iso;
+    selectedTime = null;
+    document.getElementById('confirmBtn').disabled = true;
+    fetchSlots(iso);
+  }
+
+  function fetchSlots(iso) {
+    const slotGrid = document.getElementById('slotGrid');
+    slotGrid.innerHTML = '<div class="slot empty">Loading…</div>';
+    fetch(`${CONFIG.API_URL}?date=${encodeURIComponent(iso)}&eventType=${encodeURIComponent(eventType)}`)
+      .then(r => r.json())
+      .then(data => {
+        slotGrid.innerHTML = '';
+        if (!data.slots || !data.slots.length) {
+          slotGrid.innerHTML = '<div class="slot empty">No slots available this day</div>';
+          return;
+        }
+        data.slots.forEach(t => {
+          const el = document.createElement('div');
+          el.className = 'slot';
+          el.textContent = t;
+          el.onclick = () => {
+            document.querySelectorAll('.slot').forEach(s => s.classList.remove('sel'));
+            el.classList.add('sel');
+            selectedTime = t;
+            document.getElementById('confirmBtn').disabled = false;
+          };
+          slotGrid.appendChild(el);
+        });
+      })
+      .catch(() => {
+        slotGrid.innerHTML = '<div class="slot empty">Could not load availability. Please try again.</div>';
+      });
+  }
+
+  document.getElementById('confirmBtn').onclick = () => {
+    const btn = document.getElementById('confirmBtn');
+    const err = document.getElementById('errBox');
+    err.classList.remove('show');
+    btn.disabled = true;
+    btn.textContent = 'Rescheduling…';
+
+    fetch(CONFIG.API_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'reschedule',
+        eventId, email,
+        newDate: selectedDate,
+        newTime: selectedTime
+      })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.error) {
+          err.textContent = res.error;
+          err.classList.add('show');
+          btn.disabled = false;
+          btn.textContent = 'Confirm new time';
+          return;
+        }
+        document.getElementById('pickerBox').style.display = 'none';
+        document.getElementById('currentBox').style.display = 'none';
+        document.getElementById('successBox').style.display = 'block';
+        document.getElementById('successText').textContent =
+          `Your booking is now set for ${selectedDate} at ${selectedTime} IST. A confirmation email is on its way.`;
+      })
+      .catch(() => {
+        err.textContent = 'Something went wrong. Please try again.';
+        err.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Confirm new time';
+      });
+  };
+
+  if (!eventId || !email) {
+    document.getElementById('currentBox').textContent = 'This reschedule link is missing information. Please use the link from your confirmation email.';
+  } else {
+    document.getElementById('pickerBox').style.display = 'block';
+    renderCalendar();
+  }
+</script>
+</body>
+</html>
