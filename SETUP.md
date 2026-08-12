@@ -6,11 +6,17 @@ in order.
 
 ---
 
-## 1. Deploy `gas/Code.gs` as an Apps Script Web App
+## 1. Deploy `Code.gs` as an Apps Script Web App
+
+`Code.gs` is **not** part of this repo — this repo is public, and that file
+references a personal calendar email address, an Outlook calendar ID, and
+pricing/business logic that shouldn't be public. Keep your own copy of it in
+a local-only location outside this repo (e.g. a sibling `gas-backend-local-only/`
+folder next to this repo folder) and deploy from there.
 
 1. Go to [script.google.com](https://script.google.com), create a new
-   project (or reuse an existing one), and paste the contents of
-   `gas/Code.gs` in as `Code.gs`.
+   project (or reuse an existing one), and paste the contents of your local
+   `Code.gs` copy in as `Code.gs`.
 2. **Script Properties** — Project Settings (gear icon) → Script Properties →
    add:
    - `RAZORPAY_KEY_ID` = your Razorpay key id (`rzp_test_...` while testing,
@@ -38,11 +44,12 @@ live, use **Deploy → Manage deployments → Edit → New version**. Editing th
 script alone does not update the live `/exec` URL's behavior until you cut a
 new version.
 
-> **⚠️ If you already deployed an earlier version of `Code.gs`:** the copy in
-> this repo now builds cancel/reschedule links as `https://meet.sarathg.me/cancel/`
+> **⚠️ If you already deployed an earlier version of `Code.gs`:** your local
+> copy should build cancel/reschedule links as `https://meet.sarathg.me/cancel/`
 > and `https://meet.sarathg.me/reschedule/` (clean URLs, no `.html`, correct
 > subdomain) instead of the old `sarathg.me/cancel.html` /
-> `sarathg.me/reschedule.html`. You need to **re-paste this file into the live
+> `sarathg.me/reschedule.html`. If it doesn't yet, update `buildCancelUrl` /
+> `buildRescheduleUrl` in your local copy, then **re-paste it into the live
 > Apps Script project and cut a new deployment version** (see above) for
 > future confirmation/cancellation/reminder emails to actually use the
 > corrected links. This repo cannot deploy that for you.
@@ -125,11 +132,11 @@ ideally a real ₹1 test-mode paid booking) and are happy with it.
       cancel/reschedule links that silently break — either keep that old
       deployment alive read-only for existing bookings, or migrate/honor
       those links.
-- [ ] `gas/Code.gs`'s `buildCancelUrl` / `buildRescheduleUrl` already point at
-      `meet.sarathg.me/cancel/` and `meet.sarathg.me/reschedule/` in this
-      repo — the only remaining step is the re-deploy called out in Step 1
-      above (re-paste + new deployment version) so the *live* Apps Script
-      project actually uses these corrected links.
+- [ ] Your local `Code.gs`'s `buildCancelUrl` / `buildRescheduleUrl` should
+      point at `meet.sarathg.me/cancel/` and `meet.sarathg.me/reschedule/` —
+      the remaining step is the re-deploy called out in Step 1 above
+      (re-paste + new deployment version) so the *live* Apps Script project
+      actually uses these corrected links.
 
 None of this is done automatically — it's a checklist for you to work
 through once you've verified the new site yourself.

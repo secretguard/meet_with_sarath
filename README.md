@@ -24,11 +24,14 @@ with its own duration and price:
   build step, no framework, no dependencies beyond Google Fonts and (for paid
   bookings) Razorpay's `checkout.js`. `.nojekyll` at the repo root tells GitHub
   Pages not to run these through Jekyll's Liquid processor.
-- **Backend** — `gas/Code.gs`, a Google Apps Script Web App. It owns calendar
+- **Backend** — `Code.gs`, a Google Apps Script Web App. It owns calendar
   availability, booking creation/cancellation/reschedule, Razorpay order
   creation + payment signature verification, confirmation emails, and
-  reminder emails. It is kept here for version control only — see
-  [SETUP.md](SETUP.md) for how to actually deploy it.
+  reminder emails. **It is intentionally NOT part of this repo** — this is a
+  public repo, and `Code.gs` references a personal calendar email address, an
+  Outlook calendar ID, and pricing/business logic that has no reason to be
+  public. Keep your own copy of it locally (outside this repo) and deploy it
+  from there — see [SETUP.md](SETUP.md).
 - **Config** — `config.js` (gitignored, holds your real deployment URL and
   Razorpay public key) and `config.example.js` (committed, shows the shape).
   Every HTML page loads `config.js` before its own script and reads
@@ -37,7 +40,7 @@ with its own duration and price:
 ## API contract (front end ↔ Apps Script)
 
 The front end talks to `CONFIG.API_URL` exactly as follows — this must stay
-in sync with `gas/Code.gs`:
+in sync with your local `Code.gs`:
 
 - `GET  ?date=YYYY-MM-DD&eventType={id}` → `{ date, eventType, slots: [...] }`
 - `POST { action: 'create-order', eventType }` → `{ orderId, amount, currency, keyId }`
@@ -59,7 +62,7 @@ this is safe.
 Session names, durations, and prices are defined in **two places** that must
 match:
 
-- `gas/Code.gs` → `EVENT_TYPES` (price in **paise**, used for real charges)
+- your local `Code.gs` → `EVENT_TYPES` (price in **paise**, used for real charges)
 - `index.html` → `EVENT_TYPES` (price in **rupees**, display only)
 
 If you change a price or add a session type, update both.
@@ -77,9 +80,9 @@ between them.
 
 Everything is static — open `index.html` directly in a browser, or serve
 the folder with any static file server. You'll need a real `config.js` (see
-`config.example.js`) pointing at a deployed Apps Script backend for the
-scheduling flow to actually work end-to-end; without it, the UI renders but
-network calls will fail.
+`config.example.js`) pointing at a deployed Apps Script backend (your local
+`Code.gs`, deployed per SETUP.md) for the scheduling flow to actually work
+end-to-end; without it, the UI renders but network calls will fail.
 
 Note: `config.js` is referenced from every page as an absolute path
 (`/config.js`), since `cancel/` and `reschedule/` sit one directory level
@@ -96,10 +99,15 @@ meet-with-sarath/
   reschedule/index.html    Move a booking to a new date/time — served at /reschedule/
   config.js               Your real deployment values — gitignored, not committed
   config.example.js       Placeholder shape of config.js, committed
-  gas/Code.gs              Backend reference copy (deploy manually — see SETUP.md)
   .nojekyll                Empty file — tells GitHub Pages to skip Jekyll processing
   SETUP.md                  Manual deployment steps (Apps Script, GitHub Pages, DNS, cutover)
 ```
+
+`Code.gs` (the Apps Script backend) is deliberately **not** in this tree —
+this is a public repo and that file contains a personal calendar email
+address, an Outlook calendar ID, and pricing/business logic. Keep it in a
+local-only folder outside this repo (e.g. a sibling `gas-backend-local-only/`
+folder) and deploy from there — see [SETUP.md](SETUP.md).
 
 See [SETUP.md](SETUP.md) for everything that still needs to happen outside
 this repo before the site is live.

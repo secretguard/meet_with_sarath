@@ -1,7 +1,8 @@
 // Copy this file to config.js and fill in your real values.
 // config.js is gitignored — it should never be committed.
 //
-// API_URL         = the /exec URL you get after deploying gas/Code.gs as a Web App
+// API_URL         = the /exec URL you get after deploying Code.gs as a Web App
+//                   (Code.gs is kept locally, outside this repo — see SETUP.md)
 // RAZORPAY_KEY_ID = your Razorpay PUBLIC key id (safe to expose client-side)
 //
 // Never put RAZORPAY_KEY_SECRET here or in any front-end file — it belongs
