@@ -1,12 +1,4 @@
-// Committed intentionally — neither value here is a secret.
-// API_URL is a public endpoint (every browser calling the booking page
-// already sees it in network requests). RAZORPAY_KEY_ID is Razorpay's
-// publishable key, designed to be public/client-side — it's meaningless
-// without RAZORPAY_KEY_SECRET, which lives only in Apps Script's Script
-// Properties and is never checked in anywhere. See config.example.js for
-// the shape and SETUP.md for how these values are obtained.
-
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbyRkLqINRdnGyeF2XgMQlexU91dQZY2lzKT5bmOrv0NngYO1GR27raq3NzI70LRQs22pg/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbzbrPCjXn6J84tqBqxeFxGb4tBXsrv_EmUET1TEMubG2jQlyC1Pg9Wx33B24XsMTiCj/exec',
   RAZORPAY_KEY_ID: 'rzp_live_TPADM2b83cSu8Q'
 };
