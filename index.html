@@ -55,10 +55,15 @@
   }
 
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background-color .2s,color .2s;}
+  html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background-color .2s,color .2s;}
   .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:64px 24px;}
 
-  /* THEME TOGGLE — fixed top-right, consistent across all four pages */
+  /* THEME TOGGLE — fixed top-right, consistent across all four pages.
+     Size intentionally left as-is (38px) rather than bumped to the 44px
+     tap-target target applied elsewhere on this page — it's persistent
+     chrome shared identically across all four pages (three of which are
+     out of scope for this pass), and 38px is already a reasonable target
+     for a secondary, non-flow control. */
   .theme-toggle{position:fixed;top:22px;right:22px;z-index:40;width:38px;height:38px;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,color .2s,transform .15s;box-shadow:var(--shadow);}
   .theme-toggle:hover{color:var(--accent);border-color:var(--accent-dim);transform:scale(1.05);}
   .theme-toggle svg{width:17px;height:17px;}
@@ -74,106 +79,127 @@
   .divider{height:1px;background:var(--border);}
   .meta-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
   .meta-list{display:flex;flex-direction:column;gap:12px;}
-  .meta-item{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);}
+  .meta-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);}
   .meta-item strong{color:var(--text);font-weight:500;}
   .meta-icon{width:15px;height:15px;flex-shrink:0;color:var(--muted);}
-  .desc{font-size:13px;color:var(--muted);line-height:1.7;}
+  .desc{font-size:15px;color:var(--muted);line-height:1.7;}
   .left-footer{margin-top:auto;font-size:10px;color:var(--muted);letter-spacing:.05em;border-top:1px solid var(--border);padding-top:20px;line-height:1.8;}
   .tz-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;font-size:10px;color:var(--muted);margin-top:8px;}
   .tz-badge svg{width:10px;height:10px;flex-shrink:0;}
 
   /* RIGHT PANEL */
   .right{flex:1;padding:44px 40px;display:flex;flex-direction:column;min-width:0;}
-  .step{display:flex;flex-direction:column;gap:16px;padding-bottom:32px;border-bottom:1px solid var(--border);margin-bottom:32px;transition:opacity .25s;}
-  .step:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
-  .step.locked{opacity:.3;pointer-events:none;}
-  .step-head{display:flex;align-items:center;gap:10px;}
+
+  /* ── PROGRESSIVE DISCLOSURE ──────────────────────────────────
+     Each .step has three possible data-state values:
+       active    — full-size, the step currently being worked on
+       collapsed — a one-line summary strip with a "Change" link
+       hidden    — not yet reached; not rendered at all (display:none),
+                   so it contributes zero height (this is what actually
+                   fixes the "page grows taller with every choice" bug —
+                   earlier steps used to stay in the DOM at full size,
+                   just dimmed, still taking up space)
+     Only one step is ever "active"; everything before it collapses to a
+     strip, everything after it is hidden entirely. */
+  .step{margin-bottom:14px;}
+  .step[data-state="hidden"]{display:none;}
+  .step[data-state="collapsed"] .step-body{display:none;}
+  .step[data-state="collapsed"] .step-strip{display:flex;}
+  .step[data-state="active"] .step-strip{display:none;}
+  .step[data-state="active"] .step-body{display:block;padding-bottom:28px;border-bottom:1px solid var(--border);margin-bottom:14px;}
+  .step[data-state="active"]:last-child .step-body{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+
+  .step-strip{display:none;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;}
+  .strip-check{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--btn-text);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .strip-check svg{width:12px;height:12px;}
+  .strip-value{flex:1;font-size:14px;color:var(--text);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .strip-change{flex-shrink:0;min-height:44px;padding:0 14px;background:none;border:none;color:var(--accent);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:background .15s;display:inline-flex;align-items:center;}
+  .strip-change:hover{background:var(--accent-soft);}
+
+  .step-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
   .step-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);flex-shrink:0;}
   .step-title{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
 
   /* EVENT TYPE CARDS */
   .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .type-card{border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;background:var(--surface);transition:all .15s;}
+  .type-card{border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;background:var(--surface);transition:all .15s;min-height:44px;}
   .type-card:hover{border-color:var(--accent-dim);}
   .type-card.selected{border-color:var(--accent);background:var(--accent-soft);}
-  .type-name{font-size:13.5px;color:var(--text);font-weight:500;margin-bottom:6px;}
+  .type-name{font-size:15px;color:var(--text);font-weight:500;margin-bottom:6px;}
   .type-card.selected .type-name{color:var(--accent);}
-  .type-meta{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);}
+  .type-meta{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);}
   .type-price{color:var(--text);font-weight:500;}
 
   /* CALENDAR */
   .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .cal-month{font-size:15px;font-weight:600;color:var(--text);}
-  .nav-btn{background:none;border:1px solid var(--border);color:var(--muted);width:26px;height:26px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
+  .cal-month{font-size:16px;font-weight:600;color:var(--text);}
+  .nav-btn{background:none;border:1px solid var(--border);color:var(--muted);width:40px;height:40px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
   .nav-btn:hover{border-color:var(--accent);color:var(--accent);}
   .nav-btn:disabled{opacity:.3;cursor:default;}
-  .nav-btn svg{width:12px;height:12px;}
-  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+  .nav-btn svg{width:13px;height:13px;}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
   .wd{text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:3px 0;}
-  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-  .day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:7px;cursor:pointer;color:var(--text);border:1px solid transparent;transition:all .15s;position:relative;}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .day{aspect-ratio:1;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:9px;cursor:pointer;color:var(--text);border:1px solid transparent;transition:all .15s;position:relative;}
   .day:hover:not(.empty):not(.past){border-color:var(--accent);color:var(--accent);}
   .day.selected{background:var(--accent);color:var(--btn-text)!important;border-color:var(--accent);font-weight:600;}
   .day.past{color:var(--border);cursor:default;}
-  .day.today:not(.selected)::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--muted);}
+  .day.today:not(.selected)::after{content:'';position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--muted);}
   .day.empty{cursor:default;}
 
   /* SLOTS */
-  .slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-  .slot{padding:10px 6px;border:1px solid var(--border);border-radius:8px;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;background:var(--surface);}
+  .slots-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+  .slot{min-height:44px;padding:10px 6px;border:1px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s;background:var(--surface);}
   .slot:hover{border-color:var(--accent);color:var(--text);}
   .slot.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
-  .no-slots,.loading-slots{font-size:12px;color:var(--muted);padding:6px 0;}
+  .no-slots,.loading-slots{font-size:14px;color:var(--muted);padding:6px 0;}
   .loading-slots{display:flex;align-items:center;gap:8px;}
-  .spinner{width:12px;height:12px;border:1.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+  .spinner{width:13px;height:13px;border:1.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
   @keyframes spin{to{transform:rotate(360deg);}}
-
-  .sel-summary{display:none;font-size:11.5px;color:var(--accent);padding:10px 14px;border:1px solid var(--accent-dim);border-radius:9px;background:var(--accent-soft);line-height:1.6;}
-  .sel-summary.show{display:block;}
 
   /* FORM */
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .field{display:flex;flex-direction:column;gap:6px;}
   .field.full{grid-column:1/-1;}
   .field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-  input[type="text"],input[type="email"],textarea{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;}
+  input[type="text"],input[type="email"],textarea{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
   input:focus,textarea:focus{border-color:var(--accent);}
   input::placeholder,textarea::placeholder{color:var(--muted);}
-  textarea{resize:none;height:72px;line-height:1.6;}
+  textarea{resize:none;height:78px;line-height:1.6;}
 
-  .submit-btn{width:100%;margin-top:10px;padding:14px;background:var(--accent);border:none;border-radius:9px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--btn-text);font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .submit-btn{width:100%;margin-top:12px;min-height:48px;padding:14px;background:var(--accent);border:none;border-radius:9px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--btn-text);font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
   .submit-btn:hover{opacity:.88;}
   .submit-btn:active{transform:scale(.99);}
   .submit-btn:disabled{opacity:.35;cursor:default;}
-  .btn-spinner{width:12px;height:12px;border:1.5px solid var(--btn-spinner-track);border-top-color:var(--btn-text);border-radius:50%;animation:spin .7s linear infinite;display:none;}
+  .btn-spinner{width:13px;height:13px;border:1.5px solid var(--btn-spinner-track);border-top-color:var(--btn-text);border-radius:50%;animation:spin .7s linear infinite;display:none;}
   .submit-btn.loading .btn-spinner{display:block;}
   .submit-btn.loading .btn-text{opacity:.6;}
 
-  .error-msg{display:none;font-size:11.5px;color:var(--red);padding:10px 14px;border:1px solid var(--red-dim);border-radius:8px;background:var(--red-dim);}
+  .error-msg{display:none;font-size:13px;color:var(--red);padding:11px 14px;border:1px solid var(--red-dim);border-radius:8px;background:var(--red-dim);}
   .error-msg.show{display:block;}
-  .payment-note{font-size:10.5px;color:var(--muted);text-align:center;margin-top:2px;}
+  .payment-note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:2px;}
 
   .coupon-row{display:flex;gap:8px;}
   .coupon-row input{flex:1;}
-  .coupon-apply-btn{flex-shrink:0;padding:0 16px;background:none;border:1px solid var(--border);border-radius:9px;color:var(--muted);font-family:var(--sans);font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;}
+  .coupon-apply-btn{flex-shrink:0;min-height:44px;padding:0 18px;background:none;border:1px solid var(--border);border-radius:9px;color:var(--muted);font-family:var(--sans);font-size:12px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;}
   .coupon-apply-btn:hover{border-color:var(--accent);color:var(--accent);}
   .coupon-apply-btn:disabled{opacity:.4;cursor:default;}
-  .coupon-status{font-size:11.5px;margin-top:-2px;min-height:1px;}
+  .coupon-status{font-size:13px;margin-top:-2px;min-height:1px;}
   .coupon-status.success{color:var(--accent);}
   .coupon-status.error{color:var(--red);}
 
-  .type-grid.loading,.type-grid.error{display:block;font-size:12px;color:var(--muted);padding:6px 0;}
+  .type-grid.loading,.type-grid.error{display:block;font-size:14px;color:var(--muted);padding:6px 0;}
 
   .success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;padding:64px 44px;min-height:340px;animation:fadeUp .5s ease both;}
   .success-screen.show{display:flex;}
   .success-check{width:54px;height:54px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;}
   .success-check svg{color:var(--accent);width:23px;height:23px;}
   .success-title{font-size:24px;font-weight:600;color:var(--text);line-height:1.2;}
-  .success-detail{font-size:13px;color:var(--muted);line-height:1.85;max-width:360px;}
+  .success-detail{font-size:15px;color:var(--muted);line-height:1.85;max-width:360px;}
   .success-detail strong{color:var(--text);}
   .success-detail .gold{color:var(--accent);}
-  .success-note{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
-  .success-new{margin-top:6px;background:none;border:1px solid var(--border);border-radius:8px;padding:11px 22px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;}
+  .success-note{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+  .success-new{margin-top:6px;min-height:44px;background:none;border:1px solid var(--border);border-radius:8px;padding:11px 22px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;}
   .success-new:hover{border-color:var(--accent);color:var(--accent);}
 
   @media (max-width:680px){
@@ -182,7 +208,7 @@
     .left{width:100%;border-right:none;border-bottom:1px solid var(--border);padding:36px 24px;}
     .right{padding:32px 24px;}
     .type-grid{grid-template-columns:1fr;}
-    .slots-grid{grid-template-columns:repeat(3,1fr);}
+    .slots-grid{grid-template-columns:repeat(2,1fr);}
     .form-grid{grid-template-columns:1fr;}
     .field.full{grid-column:auto;}
     .theme-toggle{top:14px;right:14px;}
@@ -238,86 +264,108 @@
     <!-- RIGHT -->
     <div class="right" id="rightPanel">
 
-      <!-- STEP 0: EVENT TYPE -->
-      <div class="step" id="step0">
-        <div class="step-head">
-          <div class="step-num">01</div>
-          <div class="step-title">Choose a session type</div>
+      <!-- STEP: EVENT TYPE -->
+      <div class="step" id="step-type" data-step="type" data-state="active">
+        <div class="step-strip">
+          <div class="strip-check"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="strip-value" id="stripTypeValue"></div>
+          <button type="button" class="strip-change" onclick="reopenStep('type')">Change</button>
         </div>
-        <div class="type-grid" id="typeGrid"></div>
-      </div>
-
-      <!-- STEP 1: DATE -->
-      <div class="step locked" id="step1">
-        <div class="step-head">
-          <div class="step-num">02</div>
-          <div class="step-title">Select a date</div>
-        </div>
-        <div>
-          <div class="cal-nav">
-            <button class="nav-btn" id="prevBtn" onclick="changeMonth(-1)" aria-label="Previous month">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="cal-month" id="monthLabel"></div>
-            <button class="nav-btn" onclick="changeMonth(1)" aria-label="Next month">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
+        <div class="step-body">
+          <div class="step-head">
+            <div class="step-num">01</div>
+            <div class="step-title">Choose a session type</div>
           </div>
-          <div class="weekdays">
-            <div class="wd">Su</div><div class="wd">Mo</div><div class="wd">Tu</div>
-            <div class="wd">We</div><div class="wd">Th</div><div class="wd">Fr</div><div class="wd">Sa</div>
-          </div>
-          <div class="days" id="calDays"></div>
+          <div class="type-grid" id="typeGrid"></div>
         </div>
       </div>
 
-      <!-- STEP 2: TIME -->
-      <div class="step locked" id="step2">
-        <div class="step-head">
-          <div class="step-num">03</div>
-          <div class="step-title">Pick a time <span id="slotDateLabel" style="color:var(--accent);margin-left:6px;font-size:9px;letter-spacing:.08em;"></span></div>
+      <!-- STEP: DATE -->
+      <div class="step" id="step-date" data-step="date" data-state="hidden">
+        <div class="step-strip">
+          <div class="strip-check"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="strip-value" id="stripDateValue"></div>
+          <button type="button" class="strip-change" onclick="reopenStep('date')">Change</button>
         </div>
-        <div id="slotsContainer">
-          <div class="no-slots">Select a date first</div>
+        <div class="step-body">
+          <div class="step-head">
+            <div class="step-num">02</div>
+            <div class="step-title">Select a date</div>
+          </div>
+          <div>
+            <div class="cal-nav">
+              <button class="nav-btn" id="prevBtn" onclick="changeMonth(-1)" aria-label="Previous month">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div class="cal-month" id="monthLabel"></div>
+              <button class="nav-btn" onclick="changeMonth(1)" aria-label="Next month">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <div class="weekdays">
+              <div class="wd">Su</div><div class="wd">Mo</div><div class="wd">Tu</div>
+              <div class="wd">We</div><div class="wd">Th</div><div class="wd">Fr</div><div class="wd">Sa</div>
+            </div>
+            <div class="days" id="calDays"></div>
+          </div>
         </div>
       </div>
 
-      <!-- STEP 3: DETAILS -->
-      <div class="step locked" id="step3">
-        <div class="step-head">
-          <div class="step-num">04</div>
-          <div class="step-title">Your details</div>
+      <!-- STEP: TIME -->
+      <div class="step" id="step-time" data-step="time" data-state="hidden">
+        <div class="step-strip">
+          <div class="strip-check"><svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="strip-value" id="stripTimeValue"></div>
+          <button type="button" class="strip-change" onclick="reopenStep('time')">Change</button>
         </div>
-        <div class="sel-summary" id="selSummary"></div>
-        <div class="form-grid">
-          <div class="field">
-            <label class="field-label" for="fname">First name</label>
-            <input type="text" id="fname" placeholder="First name" autocomplete="given-name">
+        <div class="step-body">
+          <div class="step-head">
+            <div class="step-num">03</div>
+            <div class="step-title">Pick a time <span id="slotDateLabel" style="color:var(--accent);margin-left:6px;font-size:9px;letter-spacing:.08em;"></span></div>
           </div>
-          <div class="field">
-            <label class="field-label" for="lname">Last name</label>
-            <input type="text" id="lname" placeholder="Last name" autocomplete="family-name">
-          </div>
-          <div class="field full">
-            <label class="field-label" for="email">Email address</label>
-            <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
-          </div>
-          <div class="field full">
-            <label class="field-label" for="topic" id="topicLabel">What would you like to discuss?</label>
-            <textarea id="topic" placeholder="Briefly describe your challenge or goal…"></textarea>
+          <div id="slotsContainer">
+            <div class="no-slots">Select a date first</div>
           </div>
         </div>
-        <div class="field full coupon-row" id="couponRow" style="display:none;">
-          <input type="text" id="couponInput" placeholder="Coupon code (optional)" autocapitalize="characters">
-          <button type="button" class="coupon-apply-btn" id="applyCouponBtn" onclick="applyCoupon()">Apply</button>
+      </div>
+
+      <!-- STEP: DETAILS (terminal — stays expanded until submit, never collapses to a strip) -->
+      <div class="step" id="step-details" data-step="details" data-state="hidden">
+        <div class="step-body">
+          <div class="step-head">
+            <div class="step-num">04</div>
+            <div class="step-title">Your details</div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field-label" for="fname">First name</label>
+              <input type="text" id="fname" placeholder="First name" autocomplete="given-name">
+            </div>
+            <div class="field">
+              <label class="field-label" for="lname">Last name</label>
+              <input type="text" id="lname" placeholder="Last name" autocomplete="family-name">
+            </div>
+            <div class="field full">
+              <label class="field-label" for="email">Email address</label>
+              <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
+            </div>
+            <div class="field full">
+              <label class="field-label" for="topic" id="topicLabel">What would you like to discuss?</label>
+              <textarea id="topic" placeholder="Briefly describe your challenge or goal…"></textarea>
+            </div>
+          </div>
+          <div class="field full coupon-row" id="couponRow" style="display:none;margin-top:12px;">
+            <input type="text" id="couponInput" placeholder="Coupon code (optional)" autocapitalize="characters">
+            <button type="button" class="coupon-apply-btn" id="applyCouponBtn" onclick="applyCoupon()">Apply</button>
+          </div>
+          <div class="coupon-status" id="couponStatus"></div>
+          <div class="error-msg" id="errorMsg"></div>
+          <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
+            <span class="btn-text" id="submitBtnText">Confirm Booking</span>
+            <div class="btn-spinner"></div>
+          </button>
+          <div class="payment-note" id="paymentNote" style="display:none;">Payment is handled securely by Razorpay.</div>
         </div>
-        <div class="coupon-status" id="couponStatus"></div>
-        <div class="error-msg" id="errorMsg"></div>
-        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
-          <span class="btn-text" id="submitBtnText">Confirm Booking</span>
-          <div class="btn-spinner"></div>
-        </button>
-        <div class="payment-note" id="paymentNote" style="display:none;">Payment is handled securely by Razorpay.</div>
       </div>
 
     </div>
@@ -369,6 +417,38 @@
 
   syncThemeToggleUI(getCurrentTheme());
 
+  // ── PROGRESSIVE DISCLOSURE STATE ────────────────────────────
+  // Exactly one step is "active" (full-size) at a time. Everything before
+  // it in this order is "collapsed" (one-line strip); everything after it
+  // is "hidden" (not rendered, zero height) — this is what keeps the page
+  // to roughly one screen's worth of content at every point, instead of
+  // permanently stacking every step full-size as the visitor progresses.
+  const STEP_ORDER = ['type', 'date', 'time', 'details'];
+  let currentStep = 'type';
+
+  function renderStepStates() {
+    const currentIdx = STEP_ORDER.indexOf(currentStep);
+    STEP_ORDER.forEach((key, idx) => {
+      const el = document.getElementById('step-' + key);
+      if (idx < currentIdx) el.setAttribute('data-state', 'collapsed');
+      else if (idx === currentIdx) el.setAttribute('data-state', 'active');
+      else el.setAttribute('data-state', 'hidden');
+    });
+  }
+
+  // Re-expands an earlier step. Deliberately does NOT clear any selected
+  // values itself — selectType()/selectDate()/selectSlot() already reset
+  // everything downstream of whatever they're called with, so re-picking
+  // (even re-picking the same value) after reopening naturally cascades
+  // correctly. This also means the reopened step still shows the visitor's
+  // previous choice highlighted, so "Change" reads as "review and confirm
+  // or pick differently", not "start over".
+  function reopenStep(key) {
+    currentStep = key;
+    renderStepStates();
+    document.getElementById('step-' + key).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   // ── EVENT TYPE CATALOGUE ────────────────────────────────────
   // Fetched live from the backend (GET ?action=event-types), which now reads
   // from the EventTypes sheet — a dashboard price/duration change shows up
@@ -405,10 +485,6 @@
   let selSlot  = null;
   let cachedSlots = {};
   let appliedCoupon = null;  // { code, discountedPricePaise } | null
-
-  // ── STEP HELPERS ─────────────────────────────────────────────
-  function lock(id)   { document.getElementById(id).classList.add('locked'); }
-  function unlock(id) { document.getElementById(id).classList.remove('locked'); }
 
   // ── EVENT TYPE CATALOGUE (live fetch) ──────────────────────────
   async function loadEventTypes() {
@@ -466,6 +542,7 @@
     document.getElementById('metaDuration').innerHTML = `<strong>${type.duration} min</strong> · ${formatPrice(type.price)}`;
     document.getElementById('descText').textContent = type.description;
     document.getElementById('topicLabel').textContent = TOPIC_LABELS[id] || DEFAULT_TOPIC_LABEL;
+    document.getElementById('stripTypeValue').textContent = `${type.label} · ${type.duration} min · ${formatPrice(type.price)}`;
 
     document.getElementById('paymentNote').style.display = type.pricePaise > 0 ? 'block' : 'none';
     document.getElementById('couponRow').style.display = type.pricePaise > 0 ? 'flex' : 'none';
@@ -482,13 +559,11 @@
     selDate = null;
     selSlot = null;
     cachedSlots = {};
-    unlock('step1');
-    lock('step2');
-    lock('step3');
-    document.getElementById('selSummary').classList.remove('show');
     document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
     document.getElementById('slotDateLabel').textContent = '';
     renderCal();
+
+    reopenStep('date');
   }
 
   // ── COUPONS ──────────────────────────────────────────────────
@@ -607,15 +682,18 @@
     return d.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   }
 
+  function fmtDateShort(d) {
+    return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
   // ── DATE / SLOT SELECTION ────────────────────────────────────
   function selectDate(date) {
     selDate = date;
     selSlot = null;
     renderCal();
-    unlock('step2');
-    lock('step3');
-    document.getElementById('selSummary').classList.remove('show');
+    document.getElementById('stripDateValue').textContent = fmtDateShort(date);
     loadSlots(date);
+    reopenStep('time');
   }
 
   async function loadSlots(date) {
@@ -662,12 +740,8 @@
   function selectSlot(t) {
     selSlot = t;
     renderSlots(cachedSlots[dateKey(selDate) + ':' + selectedType]);
-    unlock('step3');
-
-    const type = EVENT_TYPES[selectedType];
-    const summary = document.getElementById('selSummary');
-    summary.textContent = `${type.label}  ·  ${fmtDate(selDate)}  ·  ${selSlot} IST  ·  ${type.duration} min`;
-    summary.classList.add('show');
+    document.getElementById('stripTimeValue').textContent = `${t} IST`;
+    reopenStep('details');
   }
 
   // ── FORM VALIDATION ──────────────────────────────────────────
@@ -838,10 +912,6 @@
     document.getElementById('rightPanel').style.display = 'flex';
     document.getElementById('metaDuration').textContent = 'Select a session type';
     document.getElementById('descText').textContent = "Pick a session type to see what it's about.";
-    lock('step1');
-    lock('step2');
-    lock('step3');
-    document.getElementById('selSummary').classList.remove('show');
     document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
     document.getElementById('slotDateLabel').textContent = '';
     appliedCoupon = null;
@@ -852,11 +922,14 @@
     clearError();
     renderTypeGrid();
     renderCal();
+    currentStep = 'type';
+    renderStepStates();
   }
 
   // ── INIT ─────────────────────────────────────────────────────
   loadEventTypes();
   renderCal();
+  renderStepStates();
 </script>
 </body>
 </html>
