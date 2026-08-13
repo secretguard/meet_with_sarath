@@ -74,16 +74,29 @@
   /* ── TABLE ───────────────────────────────────────────────── */
   .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;}
   table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
-  thead th{text-align:left;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 12px;background:#0d131c;border-bottom:1px solid var(--line);}
-  tbody td{padding:10px 12px;border-bottom:1px solid var(--line);color:var(--text);}
+  /* Same understated all-caps label treatment as the booking page's step
+     titles ("SELECT A DATE", "YOUR DETAILS") — font-size:9px, letter-
+     spacing:.14em — reused here instead of inventing a new header style. */
+  thead th{text-align:left;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:13px 14px;background:#0d131c;border-bottom:1px solid var(--line);}
+  tbody td{padding:15px 14px;border-bottom:1px solid var(--line);color:var(--text);vertical-align:middle;}
   tbody tr:last-child td{border-bottom:none;}
+  tbody tr{transition:background-color .12s;}
   tbody tr:hover{background:#0d131c;}
-  .empty-row td{text-align:center;color:var(--muted);font-style:italic;padding:24px;}
+  .empty-row td{text-align:center;color:var(--muted);font-style:italic;padding:28px;}
 
-  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:500;}
-  .badge-confirmed{background:var(--green-dim);color:var(--green);}
+  .cell-primary{color:var(--text);font-weight:500;}
+  .cell-secondary{color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .cell-muted{color:var(--muted);}
+
+  /* Status/active pills — gold=good, red=negative, muted=neutral/in-between.
+     Deliberately drawn only from tokens already in the palette (accent,
+     red, muted) rather than the separate --green used for the Event
+     Types/Coupons "Active" badge, so Bookings' statuses don't read as a
+     different, clashing color language from the rest of the site. */
+  .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:500;white-space:nowrap;}
+  .badge-confirmed{background:var(--accent-dim);color:var(--accent);}
   .badge-cancelled{background:var(--red-dim);color:var(--red);}
-  .badge-rescheduled{background:var(--accent-dim);color:var(--accent);}
+  .badge-rescheduled{background:#8b98a52e;color:var(--muted);}
   .badge-active{background:var(--green-dim);color:var(--green);}
   .badge-inactive{background:#8b98a533;color:var(--muted);}
 
@@ -91,6 +104,26 @@
   .row-actions button{background:none;border:1px solid var(--line);border-radius:6px;padding:5px 9px;font-size:10px;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;}
   .row-actions button:hover{border-color:var(--accent);color:var(--accent);}
   .row-actions button.danger:hover{border-color:var(--red);color:var(--red);}
+
+  /* ── ROW ACTION MENU (••• overflow menu) ────────────────── */
+  .row-menu-btn{background:none;border:1px solid transparent;border-radius:6px;width:28px;height:28px;color:var(--muted);font-size:16px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;letter-spacing:1px;transition:border-color .15s,color .15s,background .15s;}
+  .row-menu-btn:hover, .row-menu-btn.open{border-color:var(--line);color:var(--text);background:#0d131c;}
+  .row-menu{display:none;position:fixed;min-width:190px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px;box-shadow:0 12px 32px #000000a0;z-index:60;}
+  .row-menu.show{display:block;}
+  .row-menu button{display:block;width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:9px 11px;font-size:12px;color:var(--text);font-family:var(--sans);cursor:pointer;transition:background .12s;}
+  .row-menu button:hover{background:#1a2230;}
+  .row-menu button.danger{color:var(--red);}
+  .row-menu .row-menu-divider{height:1px;background:var(--line);margin:5px 2px;}
+
+  /* ── PAGINATION ──────────────────────────────────────────── */
+  .pagination{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-top:16px;margin-top:2px;flex-wrap:wrap;}
+  .pagination-info{font-size:11.5px;color:var(--muted);}
+  .pagination-controls{display:flex;align-items:center;gap:8px;}
+  .page-btn{background:none;border:1px solid var(--line);border-radius:6px;width:28px;height:28px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s;}
+  .page-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .page-btn:disabled{opacity:.35;cursor:default;}
+  .page-btn svg{width:12px;height:12px;}
+  .page-indicator{font-size:11.5px;color:var(--text);min-width:70px;text-align:center;}
 
   /* ── INLINE EDIT ROWS (event types) ─────────────────────── */
   .et-row input[type="text"], .et-row input[type="number"]{background:#0d131c;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;width:100%;}
@@ -210,14 +243,26 @@
         <table>
           <thead>
             <tr>
-              <th>Created</th><th>Name</th><th>Email</th><th>Type</th><th>Date</th><th>Time</th>
-              <th>Duration</th><th>Paid</th><th>Coupon</th><th>Status</th><th>Actions</th>
+              <th>Created</th><th>Client</th><th>Type</th><th>Date</th><th>Time</th>
+              <th>Duration</th><th>Paid</th><th>Coupon</th><th>Status</th><th></th>
             </tr>
           </thead>
           <tbody id="bookingsBody">
-            <tr class="empty-row"><td colspan="11">Loading…</td></tr>
+            <tr class="empty-row"><td colspan="10">Loading…</td></tr>
           </tbody>
         </table>
+      </div>
+      <div class="pagination" id="bookingsPagination" style="display:none;">
+        <div class="pagination-info" id="bookingsPageInfo"></div>
+        <div class="pagination-controls">
+          <button class="page-btn" id="bookingsPrevPage" onclick="changeBookingsPage(-1)" aria-label="Previous page">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="page-indicator" id="bookingsPageIndicator"></div>
+          <button class="page-btn" id="bookingsNextPage" onclick="changeBookingsPage(1)" aria-label="Next page">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -341,6 +386,10 @@
   </div>
 </div>
 
+<!-- SHARED ROW ACTION MENU (positioned dynamically; lives outside any
+     overflow:auto container so it's never clipped by the table's scroll box) -->
+<div class="row-menu" id="rowMenu"></div>
+
 <div class="toast" id="toast"></div>
 
 <script src="/config.js"></script>
@@ -454,6 +503,61 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
+  // A raw value that round-tripped through a Sheets cell Google auto-
+  // converted to a Date/Time serial comes back over the wire as a JSON-
+  // serialized ISO timestamp ("...T...Z"). A clean plain-text value never
+  // looks like that ("2026-08-13", "6:30 PM") — this reliably tells the two
+  // apart regardless of the exact timezone math involved in how a given
+  // legacy cell got corrupted.
+  function looksLikeRawIsoTimestamp(v) {
+    return typeof v === 'string' && v.includes('T') && v.endsWith('Z');
+  }
+
+  function formatBookingDate(raw) {
+    if (!raw) return '—';
+    // Legacy row written before Bookings' date/time columns were forced to
+    // Plain Text — Sheets had auto-converted the date string into a real
+    // Date serial. Take the YYYY-MM-DD digits directly out of the UTC ISO
+    // string rather than reinterpreting through a guessed timezone: this
+    // app's own writes always stored the date as an unambiguous calendar
+    // string ("2026-08-13") in the first place, so those digits — wherever
+    // they land in the corrupted timestamp — are still the original date.
+    const datePart = looksLikeRawIsoTimestamp(raw) ? raw.slice(0, 10) : raw;
+    const d = new Date(datePart + 'T00:00:00');
+    if (isNaN(d.getTime())) return esc(raw);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function formatBookingTime(raw) {
+    if (!raw) return '—';
+    if (looksLikeRawIsoTimestamp(raw)) {
+      // Legacy row, same cause as formatBookingDate. Unlike the date, there
+      // is no reliable way to recover the exact original time here — which
+      // timezone Sheets used at write-time is unknown, and Sheets' time-only
+      // serial values are also prone to floating-point rounding artifacts
+      // (hence the stray seconds in values like "...T10:08:50.000Z", when
+      // every real slot time is a clean quarter-hour). Rather than guess a
+      // timezone shift that could be wrong, just take the HH:MM digits as
+      // written — clean and deterministic, though on rows written before
+      // this fix, treat the exact minute as approximate.
+      const match = raw.match(/T(\d{2}):(\d{2})/);
+      if (!match) return esc(raw);
+      let h = Number(match[1]);
+      const period = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${match[2]} ${period} IST`;
+    }
+    return esc(raw) + ' IST';
+  }
+
+  function formatCreatedAt(raw) {
+    if (!raw) return '—';
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ', ' +
+      d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+
   // ============================================================
   // BOOKINGS TAB
   // ============================================================
@@ -464,11 +568,15 @@
   // right after cancelling a booking) — without this guard, the stale
   // response would silently overwrite the fresh one.
   let bookingsReqId = 0;
+  let bookingsData = [];
+  let bookingsPage = 0;
+  const BOOKINGS_PAGE_SIZE = 20;
 
   async function loadBookings() {
     const reqId = ++bookingsReqId;
     const body = document.getElementById('bookingsBody');
-    body.innerHTML = '<tr class="empty-row"><td colspan="11">Loading…</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="10">Loading…</td></tr>';
+    document.getElementById('bookingsPagination').style.display = 'none';
 
     const filters = {
       dateFrom: document.getElementById('filterDateFrom').value || undefined,
@@ -480,42 +588,135 @@
     try {
       const data = await adminFetch('admin-list-bookings', filters);
       if (reqId !== bookingsReqId) return; // a newer request has since started — discard this stale response
-      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="11">${esc(data.error)}</td></tr>`; return; }
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="10">${esc(data.error)}</td></tr>`; return; }
 
-      const bookings = data.bookings || [];
-      if (!bookings.length) { body.innerHTML = '<tr class="empty-row"><td colspan="11">No bookings match these filters.</td></tr>'; return; }
-
-      body.innerHTML = bookings.map(b => {
-        const created = b.createdAt ? new Date(b.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-        const statusClass = 'badge-' + (b.status || 'confirmed');
-        const eventIdAttr = esc(b.eventId);
-        return `<tr>
-          <td>${created}</td>
-          <td>${esc(b.name)}</td>
-          <td>${esc(b.email)}</td>
-          <td>${esc(b.type)}</td>
-          <td>${esc(b.date)}</td>
-          <td>${esc(b.time)}</td>
-          <td>${esc(b.durationMins)} min</td>
-          <td>${formatRupees(b.pricePaidPaise)}</td>
-          <td>${esc(b.couponCode) || '—'}</td>
-          <td><span class="badge ${statusClass}">${esc(b.status)}</span></td>
-          <td>
-            <div class="row-actions">
-              <button onclick="openRescheduleModal('${eventIdAttr}', '${esc(b.type)}', '${esc(b.name)}')">Reschedule</button>
-              <button class="danger" onclick="adminCancelBooking('${eventIdAttr}')">Cancel</button>
-              <button onclick="adminResend('${eventIdAttr}', 'confirmation')">Resend Confirm</button>
-              <button onclick="adminResend('${eventIdAttr}', 'reminder')">Resend Reminder</button>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
+      bookingsData = data.bookings || [];
+      bookingsPage = 0;
+      renderBookingsPage();
     } catch (err) {
       // Unauthorized already handled by adminFetch; a genuine fetch failure
       // still deserves a visible state rather than staying on "Loading…"
-      if (reqId === bookingsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="11">Could not load bookings. Please try again.</td></tr>';
+      if (reqId === bookingsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="10">Could not load bookings. Please try again.</td></tr>';
     }
   }
+
+  function renderBookingsPage() {
+    const body = document.getElementById('bookingsBody');
+    const pagination = document.getElementById('bookingsPagination');
+
+    if (!bookingsData.length) {
+      body.innerHTML = '<tr class="empty-row"><td colspan="10">No bookings match these filters.</td></tr>';
+      pagination.style.display = 'none';
+      return;
+    }
+
+    const pageCount = Math.max(1, Math.ceil(bookingsData.length / BOOKINGS_PAGE_SIZE));
+    bookingsPage = Math.min(bookingsPage, pageCount - 1);
+    const start = bookingsPage * BOOKINGS_PAGE_SIZE;
+    const pageRows = bookingsData.slice(start, start + BOOKINGS_PAGE_SIZE);
+
+    body.innerHTML = pageRows.map(b => {
+      const statusClass = 'badge-' + (b.status || 'confirmed');
+      const eventIdAttr = esc(b.eventId);
+      const paid = b.pricePaidPaise > 0 ? formatRupees(b.pricePaidPaise) : (b.pricePaidPaise === 0 ? 'Free' : '—');
+      return `<tr>
+        <td class="cell-muted">${formatCreatedAt(b.createdAt)}</td>
+        <td>
+          <div class="cell-primary">${esc(b.name)}</div>
+          <div class="cell-secondary">${esc(b.email)}</div>
+        </td>
+        <td class="cell-muted">${esc(b.type)}</td>
+        <td>${formatBookingDate(b.date)}</td>
+        <td class="cell-muted">${formatBookingTime(b.time)}</td>
+        <td class="cell-muted">${esc(b.durationMins)} min</td>
+        <td>${paid}</td>
+        <td class="cell-muted">${esc(b.couponCode) || '—'}</td>
+        <td><span class="badge ${statusClass}">${esc(b.status)}</span></td>
+        <td>
+          <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    if (pageCount > 1) {
+      pagination.style.display = 'flex';
+      document.getElementById('bookingsPageInfo').textContent =
+        `${start + 1}–${Math.min(start + BOOKINGS_PAGE_SIZE, bookingsData.length)} of ${bookingsData.length}`;
+      document.getElementById('bookingsPageIndicator').textContent = `Page ${bookingsPage + 1} of ${pageCount}`;
+      document.getElementById('bookingsPrevPage').disabled = bookingsPage === 0;
+      document.getElementById('bookingsNextPage').disabled = bookingsPage >= pageCount - 1;
+    } else {
+      pagination.style.display = 'none';
+    }
+  }
+
+  function changeBookingsPage(dir) {
+    bookingsPage += dir;
+    renderBookingsPage();
+  }
+
+  // ── Row action menu (••• overflow menu) ───────────────────
+  // A single shared menu element, repositioned and repopulated per click,
+  // rather than one dropdown per row — keeps the table's row markup simple
+  // and sidesteps the table-wrap's overflow:auto clipping any per-row
+  // absolutely-positioned menu.
+  let openMenuBtn = null;
+
+  function toggleRowMenu(evt) {
+    evt.stopPropagation();
+    const menu = document.getElementById('rowMenu');
+    const btn = evt.currentTarget;
+
+    if (openMenuBtn === btn) { closeRowMenu(); return; }
+    closeRowMenu();
+
+    // Read via .dataset (browser-decoded once already) and bind as real JS
+    // closures below, rather than interpolating into another onclick
+    // attribute string — a name containing an apostrophe (e.g. "O'Brien")
+    // would otherwise HTML-decode back into a literal quote inside that
+    // string and break/corrupt the handler.
+    const eventId = btn.dataset.eventId;
+    const eventType = btn.dataset.eventType;
+    const name = btn.dataset.name;
+
+    menu.innerHTML = `
+      <button data-action="reschedule">Reschedule</button>
+      <button data-action="resend-confirm">Resend confirmation</button>
+      <button data-action="resend-reminder">Resend reminder</button>
+      <div class="row-menu-divider"></div>
+      <button class="danger" data-action="cancel">Cancel booking</button>
+    `;
+    menu.querySelector('[data-action="reschedule"]').onclick = () => { closeRowMenu(); openRescheduleModal(eventId, eventType, name); };
+    menu.querySelector('[data-action="resend-confirm"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'confirmation'); };
+    menu.querySelector('[data-action="resend-reminder"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'reminder'); };
+    menu.querySelector('[data-action="cancel"]').onclick = () => { closeRowMenu(); adminCancelBooking(eventId); };
+
+    const rect = btn.getBoundingClientRect();
+    menu.style.display = 'block'; // measure before final positioning
+    const menuHeight = menu.offsetHeight;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < menuHeight + 12;
+
+    menu.style.left = Math.min(rect.left, window.innerWidth - menu.offsetWidth - 12) + 'px';
+    menu.style.top = openUpward ? (rect.top - menuHeight - 6) + 'px' : (rect.bottom + 6) + 'px';
+    menu.classList.add('show');
+    btn.classList.add('open');
+    openMenuBtn = btn;
+  }
+
+  function closeRowMenu() {
+    const menu = document.getElementById('rowMenu');
+    menu.classList.remove('show');
+    menu.style.display = 'none';
+    if (openMenuBtn) openMenuBtn.classList.remove('open');
+    openMenuBtn = null;
+  }
+
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('rowMenu');
+    if (openMenuBtn && !menu.contains(e.target)) closeRowMenu();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRowMenu(); });
 
   function clearBookingFilters() {
     document.getElementById('filterDateFrom').value = '';
