@@ -7,6 +7,6 @@
 // the shape and SETUP.md for how these values are obtained.
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbwGrVKEh5KyHwgp9bEWtIGMsAyA-U1c-ghET2hf_2glOHO4MMhQpBiZ1EVviFh2MZl2Pg/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbyYZbvXpJWr9UirZAC43nlZ2t3htHgbnevlXe7DW7ZzL6Aziv_9VN0NqW3L-3NG8LClKQ/exec',
   RAZORPAY_KEY_ID: 'rzp_live_TPADM2b83cSu8Q'
 };
