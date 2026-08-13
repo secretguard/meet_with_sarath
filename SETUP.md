@@ -1,12 +1,70 @@
 # SETUP.md — manual steps to take this live
 
-Nothing in this repo has been deployed, pushed, or configured against any
-live service. Everything below is a manual step for you to run yourself,
-in order.
+Nothing in this repo has been deployed or configured against any live
+Google/Razorpay service yet (the repo itself is already pushed to GitHub —
+see Step 4). Everything below is a manual step for you to run yourself, in
+order.
+
+> **⚠️ Pricing note if you were mid-way through a ₹1 live payment test:**
+> Session prices used to live in `Code.gs`'s source code, where Mentorship
+> and Resume Review were temporarily set to ₹1 for a live test transaction.
+> Pricing now lives entirely in the `EventTypes` Google Sheet tab instead
+> (see Step 1), and that tab has been seeded with the **real** prices
+> (₹2,500 / ₹1,500) — not the ₹1 test values. If you haven't run your ₹1
+> test yet, do it via the admin dashboard (`/admin/` → Event Types tab):
+> edit the price down to ₹1, run the test, then edit it back — no code
+> changes or redeploys needed either way, that's the whole point of this
+> update.
 
 ---
 
-## 1. Deploy `Code.gs` as an Apps Script Web App
+## 1. Set up the Google Sheet
+
+This app now stores bookings, event types, and coupons in a Google Sheet
+instead of hardcoding them in `Code.gs`. The Sheet ID is already hardcoded
+in `Code.gs` (`SHEET_ID`), pointing at a sheet you created —
+[open it here](https://docs.google.com/spreadsheets/d/1WDA3ZM-uC1nnPPtbrcYKfx9fFO0Gs20xkkzj8YASyB4/edit)
+to keep it handy.
+
+1. Paste `Code.gs` into the Apps Script editor (see Step 2 below if you
+   haven't created the project yet — steps 1 and 2 both need the code pasted
+   in first, do that part now if it's not already there).
+2. In the Apps Script editor's function dropdown (top toolbar, next to
+   **Run**), select **`initializeSheet`**, then click **Run**.
+3. The first run will prompt you to **authorize additional scopes** (Sheets
+   access) — approve it.
+4. Check the **Execution log** (View → Logs, or `Ctrl+Enter`) for a line
+   like `Sheet initialized. Tabs: Bookings, EventTypes, Coupons` confirming
+   it worked. Open the Sheet itself to see the three tabs with headers, and
+   `EventTypes` pre-filled with the four seed session types.
+
+**This is safe to re-run** — it only creates tabs/headers that don't already
+exist, and only seeds `EventTypes` if that tab has zero data rows. Re-running
+it after you've started editing prices via the dashboard will not touch your
+edits.
+
+Final schema, for reference:
+
+| Tab | Columns |
+|---|---|
+| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic` |
+| `EventTypes` | `id, label, durationMins, pricePaise, active` |
+| `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
+
+A few notes on units and blanks: all prices are in **paise** (₹1 = 100),
+matching Razorpay's own unit — including a flat-discount coupon's
+`discountValue` (a percent-discount coupon's `discountValue` is just a plain
+0–100 number). `maxUses` blank = unlimited for a reusable coupon. `expiry`
+blank = never expires. `active` is a real boolean (TRUE/FALSE) — the admin
+dashboard writes proper booleans, but the sheet also tolerates the text
+`"TRUE"`/`"FALSE"` if you ever edit a cell by hand.
+
+You generally shouldn't need to hand-edit these tabs — the admin dashboard
+(Step 6 below, once deployed) does all of this through the UI. `Bookings`
+in particular is written to automatically by the backend on every booking/
+cancel/reschedule; treat it as a log, not something to type into directly.
+
+## 2. Deploy `Code.gs` as an Apps Script Web App
 
 `Code.gs` is **not** part of this repo — this repo is public, and that file
 references a personal calendar email address, an Outlook calendar ID, and
@@ -22,6 +80,8 @@ folder next to this repo folder) and deploy from there.
    - `RAZORPAY_KEY_ID` = your Razorpay key id (`rzp_test_...` while testing,
      `rzp_live_...` for real charges)
    - `RAZORPAY_KEY_SECRET` = your Razorpay key secret
+   - `ADMIN_TOKEN` = a long random string you make up (this is the password
+     for `/admin/` — treat it like one; there's no username, just this token)
 
    These never go in any file in this repo — they only live here, server-side.
 3. **Deploy → New deployment**:
@@ -54,7 +114,7 @@ new version.
 > future confirmation/cancellation/reminder emails to actually use the
 > corrected links. This repo cannot deploy that for you.
 
-## 2. Add the two time-driven triggers
+## 3. Add the two time-driven triggers
 
 Apps Script editor → **Triggers** (clock icon in the left sidebar) → **Add
 Trigger**, twice:
@@ -68,21 +128,13 @@ Both functions already exist in `Code.gs` — this step just wires them up to
 run automatically. Without this, bookings still work, but no reminder emails
 go out.
 
-## 3. GitHub Pages for this repo
+## 4. GitHub Pages for this repo
 
-This repo is currently local-only (`git init`, no remote). When you're ready:
+This repo is already pushed to GitHub. If Pages isn't enabled yet:
 
-1. Create a **new, empty** GitHub repository (e.g. `meet-with-sarath`) —
-   do not reuse the `sarathg.me` repo.
-2. From this folder:
-   ```bash
-   git remote add origin https://github.com/<your-username>/meet-with-sarath.git
-   git branch -M main
-   git push -u origin main
-   ```
-3. In the new repo's GitHub settings → **Pages** → set source to the `main`
+1. In the repo's GitHub settings → **Pages** → set source to the `main`
    branch, root folder.
-4. Add a `CNAME` file at the repo root containing exactly:
+2. Confirm a `CNAME` file exists at the repo root containing exactly:
    ```
    meet.sarathg.me
    ```
@@ -96,10 +148,10 @@ plain-text JS in these pages). No build step, no Jekyll config — this repo
 stays a pure static site.
 
 Because every page lives at `path/index.html` (`/`, `/cancel/`,
-`/reschedule/`), GitHub Pages serves clean extension-less URLs automatically
-— no extra rewrite rules needed.
+`/reschedule/`, `/admin/`), GitHub Pages serves clean extension-less URLs
+automatically — no extra rewrite rules needed.
 
-## 4. DNS (Cloudflare)
+## 5. DNS (Cloudflare)
 
 This is a dashboard step — nothing to script. In your Cloudflare DNS
 settings for `sarathg.me`, add:
@@ -115,7 +167,16 @@ Give DNS a few minutes to propagate, then confirm `meet.sarathg.me` resolves
 and GitHub Pages shows the custom domain as verified (Settings → Pages) with
 HTTPS enforced.
 
-## 5. Cutover — LATER, NOT NOW
+## 6. Log into the admin dashboard
+
+Visit `https://meet.sarathg.me/admin/`. First visit shows a token prompt —
+enter the `ADMIN_TOKEN` value you set in Script Properties (Step 2). It's
+stored in `localStorage` after that (no expiry — see the note on this in the
+project's build summary; a "Log out" button in the dashboard clears it if you
+ever need to). From here you can review/edit event types and prices, create
+coupons, and manage bookings without touching code.
+
+## 7. Cutover — LATER, NOT NOW
 
 Do not do any of this until you've personally tested the new
 `meet.sarathg.me` site end-to-end (a real free booking, a real cancel, and
@@ -134,7 +195,7 @@ ideally a real ₹1 test-mode paid booking) and are happy with it.
       those links.
 - [ ] Your local `Code.gs`'s `buildCancelUrl` / `buildRescheduleUrl` should
       point at `meet.sarathg.me/cancel/` and `meet.sarathg.me/reschedule/` —
-      the remaining step is the re-deploy called out in Step 1 above
+      the remaining step is the re-deploy called out in Step 2 above
       (re-paste + new deployment version) so the *live* Apps Script project
       actually uses these corrected links.
 

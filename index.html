@@ -111,6 +111,17 @@
   .error-msg.show{display:block;}
   .payment-note{font-size:10.5px;color:var(--muted);text-align:center;margin-top:2px;}
 
+  .coupon-row{display:flex;gap:8px;}
+  .coupon-row input{flex:1;}
+  .coupon-apply-btn{flex-shrink:0;padding:0 16px;background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-family:var(--sans);font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;}
+  .coupon-apply-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .coupon-apply-btn:disabled{opacity:.4;cursor:default;}
+  .coupon-status{font-size:11.5px;margin-top:-2px;min-height:1px;}
+  .coupon-status.success{color:var(--accent);}
+  .coupon-status.error{color:var(--red);}
+
+  .type-grid.loading,.type-grid.error{display:block;font-size:12px;color:var(--muted);font-style:italic;padding:6px 0;}
+
   .success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:60px 40px;min-height:340px;animation:fadeUp .5s ease both;}
   .success-screen.show{display:flex;}
   .success-check{width:54px;height:54px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;}
@@ -247,6 +258,11 @@
             <textarea id="topic" placeholder="Briefly describe your challenge or goal…"></textarea>
           </div>
         </div>
+        <div class="field full coupon-row" id="couponRow" style="display:none;">
+          <input type="text" id="couponInput" placeholder="Coupon code (optional)" autocapitalize="characters">
+          <button type="button" class="coupon-apply-btn" id="applyCouponBtn" onclick="applyCoupon()">Apply</button>
+        </div>
+        <div class="coupon-status" id="couponStatus"></div>
         <div class="error-msg" id="errorMsg"></div>
         <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
           <span class="btn-text" id="submitBtnText">Confirm Booking</span>
@@ -275,37 +291,11 @@
 <script src="/config.js"></script>
 <script>
   // ── EVENT TYPE CATALOGUE ────────────────────────────────────
-  // Keep this in sync with EVENT_TYPES in your local Code.gs (kept outside this repo).
-  // price is in INR rupees here (display only) — Code.gs stores price in paise
-  // and is the source of truth for what actually gets charged.
-  const EVENT_TYPES = {
-    'scoping-call': {
-      label: 'Scoping Call',
-      duration: 30,
-      price: 0,
-      description: 'A focused 30-minute conversation to understand your challenge and explore how we might work together.'
-    },
-    'career-advice': {
-      label: 'Basic Career Advice',
-      duration: 15,
-      price: 0,
-      description: 'A quick, focused 15-minute career conversation.'
-    },
-    'mentorship': {
-      label: 'Mentorship Session',
-      duration: 60,
-      // TEMP: real price 2500 (₹2,500) — set to 1 for live payment test, revert after
-      price: 1,
-      description: 'A 1-hour 1:1 mentorship session.'
-    },
-    'resume-review': {
-      label: 'Resume Review & Career Advice',
-      duration: 45,
-      // TEMP: real price 1500 (₹1,500) — set to 1 for live payment test, revert after
-      price: 1,
-      description: 'An in-depth resume review plus tailored career advice.'
-    }
-  };
+  // Fetched live from the backend (GET ?action=event-types), which now reads
+  // from the EventTypes sheet — a dashboard price/duration change shows up
+  // here without a redeploy. `price` below is rupees (display only);
+  // `pricePaise` is the real unit and what all pricing logic uses.
+  let EVENT_TYPES = {};
 
   const TOPIC_LABELS = {
     'resume-review': 'What would you like feedback on?'
@@ -335,10 +325,40 @@
   let selDate  = null;
   let selSlot  = null;
   let cachedSlots = {};
+  let appliedCoupon = null;  // { code, discountedPricePaise } | null
 
   // ── STEP HELPERS ─────────────────────────────────────────────
   function lock(id)   { document.getElementById(id).classList.add('locked'); }
   function unlock(id) { document.getElementById(id).classList.remove('locked'); }
+
+  // ── EVENT TYPE CATALOGUE (live fetch) ──────────────────────────
+  async function loadEventTypes() {
+    const grid = document.getElementById('typeGrid');
+    grid.className = 'type-grid loading';
+    grid.textContent = 'Loading session types…';
+    try {
+      const res = await fetch(`${CONFIG.API_URL}?action=event-types`);
+      const data = await res.json();
+      if (!data.eventTypes || !data.eventTypes.length) throw new Error('empty');
+
+      EVENT_TYPES = {};
+      data.eventTypes.forEach(t => {
+        EVENT_TYPES[t.id] = {
+          label: t.label,
+          duration: t.duration,
+          price: Math.round(t.price / 100),   // rupees, display only
+          pricePaise: t.price,                 // real unit, used for all logic
+          description: `A ${t.duration}-minute ${t.label}.`
+        };
+      });
+
+      grid.className = 'type-grid';
+      renderTypeGrid();
+    } catch (err) {
+      grid.className = 'type-grid error';
+      grid.textContent = 'Could not load session types. Please refresh the page.';
+    }
+  }
 
   // ── EVENT TYPE CARDS ─────────────────────────────────────────
   function renderTypeGrid() {
@@ -368,15 +388,16 @@
     document.getElementById('descText').textContent = `"${type.description}"`;
     document.getElementById('topicLabel').textContent = TOPIC_LABELS[id] || DEFAULT_TOPIC_LABEL;
 
-    const submitText = document.getElementById('submitBtnText');
-    const paymentNote = document.getElementById('paymentNote');
-    if (type.price > 0) {
-      submitText.textContent = `Confirm & Pay ${formatPrice(type.price)}`;
-      paymentNote.style.display = 'block';
-    } else {
-      submitText.textContent = 'Confirm Booking';
-      paymentNote.style.display = 'none';
-    }
+    document.getElementById('paymentNote').style.display = type.pricePaise > 0 ? 'block' : 'none';
+    document.getElementById('couponRow').style.display = type.pricePaise > 0 ? 'flex' : 'none';
+
+    // a coupon (and any price it changed) only ever applied to the
+    // previously selected type — clear it whenever the type changes
+    appliedCoupon = null;
+    document.getElementById('couponInput').value = '';
+    document.getElementById('couponStatus').textContent = '';
+    document.getElementById('couponStatus').className = 'coupon-status';
+    updatePriceDisplay();
 
     // reset downstream state whenever the type changes
     selDate = null;
@@ -389,6 +410,72 @@
     document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
     document.getElementById('slotDateLabel').textContent = '';
     renderCal();
+  }
+
+  // ── COUPONS ──────────────────────────────────────────────────
+  function getEffectivePricePaise() {
+    const type = EVENT_TYPES[selectedType];
+    if (!type) return 0;
+    return appliedCoupon ? appliedCoupon.discountedPricePaise : type.pricePaise;
+  }
+
+  function updatePriceDisplay() {
+    const type = EVENT_TYPES[selectedType];
+    const submitText = document.getElementById('submitBtnText');
+    if (!type) return;
+    const effective = getEffectivePricePaise();
+    if (effective > 0) {
+      submitText.textContent = `Confirm & Pay ${formatPrice(Math.round(effective / 100))}`;
+    } else if (type.pricePaise > 0) {
+      submitText.textContent = 'Confirm Booking (Free)';
+    } else {
+      submitText.textContent = 'Confirm Booking';
+    }
+  }
+
+  async function applyCoupon() {
+    const code = document.getElementById('couponInput').value.trim();
+    const statusEl = document.getElementById('couponStatus');
+    const btn = document.getElementById('applyCouponBtn');
+
+    if (!code) {
+      appliedCoupon = null;
+      statusEl.textContent = '';
+      statusEl.className = 'coupon-status';
+      updatePriceDisplay();
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = 'Checking…';
+    statusEl.className = 'coupon-status';
+
+    try {
+      const res = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'validate-coupon', code, eventType: selectedType })
+      });
+      const data = await res.json();
+
+      if (!data.valid) {
+        appliedCoupon = null;
+        statusEl.textContent = data.error || 'Invalid coupon code.';
+        statusEl.className = 'coupon-status error';
+      } else {
+        appliedCoupon = { code: data.code, discountedPricePaise: data.discountedPrice };
+        const wasRupees = Math.round(data.originalPrice / 100);
+        const nowRupees = Math.round(data.discountedPrice / 100);
+        statusEl.textContent = `Applied — ${formatPrice(nowRupees)} instead of ${formatPrice(wasRupees)}`;
+        statusEl.className = 'coupon-status success';
+      }
+    } catch (err) {
+      appliedCoupon = null;
+      statusEl.textContent = 'Could not validate coupon. Please try again.';
+      statusEl.className = 'coupon-status error';
+    }
+
+    btn.disabled = false;
+    updatePriceDisplay();
   }
 
   // ── CALENDAR ─────────────────────────────────────────────────
@@ -542,13 +629,18 @@
   }
 
   // ── SUBMIT: routes to free booking or paid (Razorpay) flow ───
+  // Routes on the EFFECTIVE price (after any applied coupon) — a coupon
+  // that covers the full price skips Razorpay entirely, same as a
+  // naturally-free event type.
   function handleSubmit() {
     clearError();
     const payload = validateForm();
     if (!payload) return;
+    if (appliedCoupon) payload.couponCode = appliedCoupon.code;
 
     const type = EVENT_TYPES[selectedType];
-    if (type.price > 0) {
+    const effective = getEffectivePricePaise();
+    if (effective > 0) {
       startPaidBooking(payload, type);
     } else {
       submitBooking(payload);
@@ -594,7 +686,7 @@
 
       const orderRes = await fetch(CONFIG.API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: 'create-order', eventType: payload.eventType })
+        body: JSON.stringify({ action: 'create-order', eventType: payload.eventType, couponCode: payload.couponCode })
       });
       const order = await orderRes.json();
       if (order.error || !order.orderId) {
@@ -673,6 +765,10 @@
     document.getElementById('selSummary').classList.remove('show');
     document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
     document.getElementById('slotDateLabel').textContent = '';
+    appliedCoupon = null;
+    document.getElementById('couponInput').value = '';
+    document.getElementById('couponStatus').textContent = '';
+    document.getElementById('couponRow').style.display = 'none';
     setSubmitLoading(false);
     clearError();
     renderTypeGrid();
@@ -680,7 +776,7 @@
   }
 
   // ── INIT ─────────────────────────────────────────────────────
-  renderTypeGrid();
+  loadEventTypes();
   renderCal();
 </script>
 </body>

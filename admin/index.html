@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Meet with Sarath</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#10161f; --line:#1f2833;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+    --accent-soft:#cda86814; --accent-dim:#cda86833;
+    --avatar-bg:#1c4d3a; --red:#e0685c; --red-dim:#e0685c33;
+    --green:#6bbf8f; --green-dim:#6bbf8f33;
+    --serif:'Playfair Display', Georgia, serif;
+    --sans:'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  a{color:var(--accent);}
+
+  /* ── AUTH GATE ───────────────────────────────────────────── */
+  .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+  .auth-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:36px 32px;text-align:center;}
+  .auth-card .avatar{width:46px;height:46px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:16px;font-weight:600;color:var(--accent);margin:0 auto 18px;}
+  .auth-card h1{font-family:var(--serif);font-size:21px;font-weight:500;color:#fff;margin-bottom:8px;}
+  .auth-card p{color:var(--muted);font-size:12.5px;margin-bottom:22px;line-height:1.6;}
+  .auth-card input{width:100%;background:#0d131c;border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-size:13px;color:var(--text);font-family:var(--sans);outline:none;margin-bottom:14px;transition:border-color .15s;}
+  .auth-card input:focus{border-color:var(--accent);}
+  .auth-card button{width:100%;padding:12px;background:var(--accent);border:none;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#0a0e14;font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s;}
+  .auth-card button:hover{opacity:.88;}
+  .auth-card button:disabled{opacity:.4;cursor:default;}
+  .auth-err{color:var(--red);font-size:11.5px;margin-top:12px;display:none;}
+  .auth-err.show{display:block;}
+
+  /* ── DASHBOARD SHELL ─────────────────────────────────────── */
+  .dash{display:none;max-width:1180px;margin:0 auto;padding:28px 24px 60px;}
+  .dash.show{display:block;}
+  .dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--line);}
+  .dash-title{display:flex;align-items:center;gap:12px;}
+  .dash-title .avatar{width:36px;height:36px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:13px;font-weight:600;color:var(--accent);}
+  .dash-title h1{font-family:var(--serif);font-size:19px;font-weight:500;color:#fff;}
+  .dash-title span{font-size:11px;color:var(--muted);}
+  .logout-btn{background:none;border:1px solid var(--line);border-radius:7px;padding:8px 14px;color:var(--muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;}
+  .logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+  .tabs{display:flex;gap:4px;margin-bottom:22px;border-bottom:1px solid var(--line);}
+  .tab-btn{background:none;border:none;padding:10px 18px;color:var(--muted);font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:.02em;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .2s,border-color .2s;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--accent);border-color:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:20px;}
+  .panel h2{font-family:var(--serif);font-size:16px;font-weight:500;color:#fff;margin-bottom:14px;}
+
+  /* ── FILTER BAR ──────────────────────────────────────────── */
+  .filter-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:18px;}
+  .filter-field{display:flex;flex-direction:column;gap:5px;}
+  .filter-field label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .filter-field input, .filter-field select{background:#0d131c;border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;min-width:130px;}
+  .filter-field input:focus, .filter-field select:focus{border-color:var(--accent);}
+  .btn{background:var(--accent);border:none;border-radius:7px;padding:9px 16px;color:#0a0e14;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:opacity .2s;}
+  .btn:hover{opacity:.88;}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .btn-outline{background:none;border:1px solid var(--line);color:var(--muted);}
+  .btn-outline:hover{border-color:var(--accent);color:var(--accent);opacity:1;}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-sm{padding:6px 11px;font-size:10px;}
+
+  /* ── TABLE ───────────────────────────────────────────────── */
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+  thead th{text-align:left;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 12px;background:#0d131c;border-bottom:1px solid var(--line);}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--line);color:var(--text);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#0d131c;}
+  .empty-row td{text-align:center;color:var(--muted);font-style:italic;padding:24px;}
+
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:500;}
+  .badge-confirmed{background:var(--green-dim);color:var(--green);}
+  .badge-cancelled{background:var(--red-dim);color:var(--red);}
+  .badge-rescheduled{background:var(--accent-dim);color:var(--accent);}
+  .badge-active{background:var(--green-dim);color:var(--green);}
+  .badge-inactive{background:#8b98a533;color:var(--muted);}
+
+  .row-actions{display:flex;gap:6px;}
+  .row-actions button{background:none;border:1px solid var(--line);border-radius:6px;padding:5px 9px;font-size:10px;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;}
+  .row-actions button:hover{border-color:var(--accent);color:var(--accent);}
+  .row-actions button.danger:hover{border-color:var(--red);color:var(--red);}
+
+  /* ── INLINE EDIT ROWS (event types) ─────────────────────── */
+  .et-row input[type="text"], .et-row input[type="number"]{background:#0d131c;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;width:100%;}
+  .et-row input:focus{border-color:var(--accent);}
+  .et-row input[type="text"].id-input{width:130px;}
+  .et-row input[type="number"]{width:80px;}
+  .checkbox-cell{display:flex;align-items:center;justify-content:center;}
+  .checkbox-cell input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+
+  /* ── FORM (add event type / coupon) ─────────────────────── */
+  .inline-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .inline-form .filter-field input, .inline-form .filter-field select{min-width:110px;}
+  .form-status{font-size:11.5px;margin-top:10px;min-height:1px;}
+  .form-status.success{color:var(--accent);}
+  .form-status.error{color:var(--red);}
+
+  /* ── MODAL (reschedule) ─────────────────────────────────── */
+  .modal-overlay{display:none;position:fixed;inset:0;background:#05070ccc;z-index:50;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 24px;max-height:90vh;overflow-y:auto;}
+  .modal-card h3{font-family:var(--serif);font-size:17px;font-weight:500;color:#fff;margin-bottom:4px;}
+  .modal-card .modal-sub{color:var(--muted);font-size:11.5px;margin-bottom:18px;}
+  .modal-close{float:right;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;}
+  .modal-close:hover{color:var(--text);}
+
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cal-month{font-family:var(--serif);font-size:15px;font-weight:500;color:var(--text);}
+  .nav-btn{background:none;border:1px solid var(--line);color:var(--muted);width:24px;height:24px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s;}
+  .nav-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .nav-btn svg{width:11px;height:11px;}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+  .wd{text-align:center;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:2px 0;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:16px;}
+  .cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;background:#0d131c;color:var(--muted);font-size:11px;cursor:pointer;border:1px solid transparent;transition:all .15s;}
+  .cal-cell:hover{border-color:var(--accent);color:var(--accent);}
+  .cal-cell.sel{background:var(--accent);color:var(--bg);font-weight:600;border-color:var(--accent);}
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;}
+  .slot{padding:8px;border:1px solid var(--line);border-radius:6px;text-align:center;font-size:11.5px;cursor:pointer;background:#0d131c;color:var(--muted);transition:all .15s;}
+  .slot:hover{border-color:var(--accent);color:var(--text);}
+  .slot.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .slot.empty{grid-column:1/-1;color:var(--muted);font-size:11px;text-align:left;padding:0;background:none;border:none;cursor:default;font-style:italic;}
+
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 18px;font-size:12px;color:var(--text);z-index:100;display:none;max-width:320px;}
+  .toast.show{display:block;}
+  .toast.success{border-color:var(--accent-dim);color:var(--accent);}
+  .toast.error{border-color:var(--red-dim);color:var(--red);}
+
+  @media (max-width:680px){
+    .dash{padding:20px 14px 50px;}
+    .dash-header{flex-direction:column;align-items:flex-start;gap:14px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH GATE -->
+<div class="auth-page" id="authPage">
+  <div class="auth-card">
+    <div class="avatar">SG</div>
+    <h1>Admin access</h1>
+    <p>Enter the admin token to manage bookings, event types, and coupons for Meet with Sarath.</p>
+    <input type="password" id="tokenInput" placeholder="Admin token" autocomplete="off">
+    <button id="authSubmitBtn" onclick="submitToken()">Enter</button>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dash">
+  <div class="dash-header">
+    <div class="dash-title">
+      <div class="avatar">SG</div>
+      <div>
+        <h1>Meet with Sarath — Admin</h1>
+        <span>Bookings, event types, and coupons</span>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="bookings" onclick="switchTab('bookings')">Bookings</button>
+    <button class="tab-btn" data-tab="eventtypes" onclick="switchTab('eventtypes')">Event Types</button>
+    <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')">Coupons</button>
+  </div>
+
+  <!-- BOOKINGS TAB -->
+  <div class="tab-panel active" id="tab-bookings">
+    <div class="panel">
+      <h2>Bookings</h2>
+      <div class="filter-bar">
+        <div class="filter-field">
+          <label>From</label>
+          <input type="date" id="filterDateFrom">
+        </div>
+        <div class="filter-field">
+          <label>To</label>
+          <input type="date" id="filterDateTo">
+        </div>
+        <div class="filter-field">
+          <label>Event Type</label>
+          <select id="filterEventType"><option value="">All</option></select>
+        </div>
+        <div class="filter-field">
+          <label>Status</label>
+          <select id="filterStatus">
+            <option value="">All</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="rescheduled">Rescheduled</option>
+          </select>
+        </div>
+        <button class="btn" onclick="loadBookings()">Filter</button>
+        <button class="btn btn-outline" onclick="clearBookingFilters()">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Created</th><th>Name</th><th>Email</th><th>Type</th><th>Date</th><th>Time</th>
+              <th>Duration</th><th>Paid</th><th>Coupon</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bookingsBody">
+            <tr class="empty-row"><td colspan="11">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENT TYPES TAB -->
+  <div class="tab-panel" id="tab-eventtypes">
+    <div class="panel">
+      <h2>Event Types</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Label</th><th>Duration (min)</th><th>Price (₹)</th><th>Active</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="eventTypesBody">
+            <tr class="empty-row"><td colspan="6">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="inline-form" id="newEventTypeForm">
+        <div class="filter-field">
+          <label>ID</label>
+          <input type="text" id="newEtId" placeholder="e.g. quick-chat">
+        </div>
+        <div class="filter-field">
+          <label>Label</label>
+          <input type="text" id="newEtLabel" placeholder="Session name">
+        </div>
+        <div class="filter-field">
+          <label>Duration (min)</label>
+          <input type="number" id="newEtDuration" min="5" step="5" value="30">
+        </div>
+        <div class="filter-field">
+          <label>Price (₹)</label>
+          <input type="number" id="newEtPrice" min="0" step="1" value="0">
+        </div>
+        <button class="btn" onclick="createEventType()">Add Event Type</button>
+      </div>
+      <div class="form-status" id="etFormStatus"></div>
+    </div>
+  </div>
+
+  <!-- COUPONS TAB -->
+  <div class="tab-panel" id="tab-coupons">
+    <div class="panel">
+      <h2>Coupons</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Code</th><th>Discount</th><th>Usage</th><th>Used / Limit</th><th>Active</th><th>Expiry</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="couponsBody">
+            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="inline-form" id="couponForm">
+        <div class="filter-field">
+          <label>Code</label>
+          <input type="text" id="couponCode" placeholder="e.g. WELCOME10" style="text-transform:uppercase;">
+        </div>
+        <div class="filter-field">
+          <label>Discount type</label>
+          <select id="couponDiscountType" onchange="onCouponTypeChange()">
+            <option value="flat">Flat (₹ off)</option>
+            <option value="percent">Percent (% off)</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label id="couponValueLabel">Amount off (₹)</label>
+          <input type="number" id="couponDiscountValue" min="0" step="1" value="0">
+        </div>
+        <div class="filter-field">
+          <label>Usage type</label>
+          <select id="couponUsageType" onchange="onCouponUsageChange()">
+            <option value="one-time">One-time</option>
+            <option value="reusable">Reusable</option>
+          </select>
+        </div>
+        <div class="filter-field" id="couponMaxUsesField" style="display:none;">
+          <label>Max uses (blank = unlimited)</label>
+          <input type="number" id="couponMaxUses" min="1" step="1" placeholder="Unlimited">
+        </div>
+        <div class="filter-field">
+          <label>Expiry (optional)</label>
+          <input type="date" id="couponExpiry">
+        </div>
+        <button class="btn" id="couponSubmitBtn" onclick="submitCoupon()">Create Coupon</button>
+        <button class="btn btn-outline" id="couponCancelEditBtn" onclick="resetCouponForm()" style="display:none;">Cancel Edit</button>
+      </div>
+      <div class="form-status" id="couponFormStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESCHEDULE MODAL -->
+<div class="modal-overlay" id="rescheduleModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeRescheduleModal()">&times;</button>
+    <h3>Reschedule booking</h3>
+    <div class="modal-sub" id="rescheduleModalSub"></div>
+
+    <div class="cal-nav">
+      <button class="nav-btn" id="modalPrevBtn" onclick="modalChangeMonth(-1)" aria-label="Previous month">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="cal-month" id="modalMonthLabel"></div>
+      <button class="nav-btn" onclick="modalChangeMonth(1)" aria-label="Next month">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div class="weekdays">
+      <div class="wd">Su</div><div class="wd">Mo</div><div class="wd">Tu</div>
+      <div class="wd">We</div><div class="wd">Th</div><div class="wd">Fr</div><div class="wd">Sa</div>
+    </div>
+    <div class="cal-grid" id="modalCalGrid"></div>
+    <div class="slots" id="modalSlotGrid"><div class="slot empty">Select a date first</div></div>
+    <button class="btn" id="modalConfirmBtn" disabled onclick="confirmModalReschedule()" style="width:100%;">Confirm new time</button>
+    <div class="form-status error" id="modalErr"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/config.js"></script>
+<script>
+  // ============================================================
+  // AUTH
+  // ============================================================
+  const TOKEN_KEY = 'meetWithSarathAdminToken';
+  const getToken = () => localStorage.getItem(TOKEN_KEY);
+  const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
+  const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+
+  // Apps Script Web Apps can't read custom HTTP headers, so the admin
+  // token travels as a field in the JSON POST body (like every other
+  // action field here) rather than an X-Admin-Token header.
+  async function adminFetch(action, payload) {
+    payload = payload || {};
+    const res = await fetch(CONFIG.API_URL, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ action, adminToken: getToken() }, payload))
+    });
+    const data = await res.json();
+    if (data.error === 'Unauthorized') {
+      clearToken();
+      showAuthGate('Your admin token was rejected. Please re-enter it.');
+      throw new Error('Unauthorized');
+    }
+    return data;
+  }
+
+  function showAuthGate(errMsg) {
+    document.getElementById('dash').classList.remove('show');
+    document.getElementById('authPage').style.display = 'flex';
+    const err = document.getElementById('authErr');
+    if (errMsg) {
+      err.textContent = errMsg;
+      err.classList.add('show');
+    } else {
+      err.classList.remove('show');
+    }
+  }
+
+  async function submitToken() {
+    const input = document.getElementById('tokenInput');
+    const btn = document.getElementById('authSubmitBtn');
+    const token = input.value.trim();
+    if (!token) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    setToken(token);
+
+    try {
+      const data = await adminFetch('admin-list-event-types');
+      if (data.error) {
+        clearToken();
+        document.getElementById('authErr').textContent = data.error;
+        document.getElementById('authErr').classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Enter';
+        return;
+      }
+      enterDashboard();
+    } catch (err) {
+      // adminFetch already cleared the token + showed the auth gate on Unauthorized
+      btn.disabled = false;
+      btn.textContent = 'Enter';
+    }
+  }
+
+  function logout() {
+    clearToken();
+    document.getElementById('tokenInput').value = '';
+    showAuthGate();
+  }
+
+  function enterDashboard() {
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('dash').classList.add('show');
+    loadEventTypesTab();
+    loadCoupons();
+    loadBookings();
+  }
+
+  // ============================================================
+  // TABS
+  // ============================================================
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  }
+
+  // ============================================================
+  // TOAST
+  // ============================================================
+  let toastTimer = null;
+  function showToast(msg, kind) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (kind ? ' ' + kind : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function formatRupees(paise) {
+    const r = Math.round((paise || 0) / 100);
+    return r > 0 ? '₹' + r.toLocaleString('en-IN') : 'Free';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  // ============================================================
+  // BOOKINGS TAB
+  // ============================================================
+  async function loadBookings() {
+    const body = document.getElementById('bookingsBody');
+    body.innerHTML = '<tr class="empty-row"><td colspan="11">Loading…</td></tr>';
+
+    const filters = {
+      dateFrom: document.getElementById('filterDateFrom').value || undefined,
+      dateTo: document.getElementById('filterDateTo').value || undefined,
+      eventType: document.getElementById('filterEventType').value || undefined,
+      status: document.getElementById('filterStatus').value || undefined
+    };
+
+    try {
+      const data = await adminFetch('admin-list-bookings', filters);
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="11">${esc(data.error)}</td></tr>`; return; }
+
+      const bookings = data.bookings || [];
+      if (!bookings.length) { body.innerHTML = '<tr class="empty-row"><td colspan="11">No bookings match these filters.</td></tr>'; return; }
+
+      body.innerHTML = bookings.map(b => {
+        const created = b.createdAt ? new Date(b.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const statusClass = 'badge-' + (b.status || 'confirmed');
+        const eventIdAttr = esc(b.eventId);
+        return `<tr>
+          <td>${created}</td>
+          <td>${esc(b.name)}</td>
+          <td>${esc(b.email)}</td>
+          <td>${esc(b.type)}</td>
+          <td>${esc(b.date)}</td>
+          <td>${esc(b.time)}</td>
+          <td>${esc(b.durationMins)} min</td>
+          <td>${formatRupees(b.pricePaidPaise)}</td>
+          <td>${esc(b.couponCode) || '—'}</td>
+          <td><span class="badge ${statusClass}">${esc(b.status)}</span></td>
+          <td>
+            <div class="row-actions">
+              <button onclick="openRescheduleModal('${eventIdAttr}', '${esc(b.type)}', '${esc(b.name)}')">Reschedule</button>
+              <button class="danger" onclick="adminCancelBooking('${eventIdAttr}')">Cancel</button>
+              <button onclick="adminResend('${eventIdAttr}', 'confirmation')">Resend Confirm</button>
+              <button onclick="adminResend('${eventIdAttr}', 'reminder')">Resend Reminder</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch (err) {
+      // Unauthorized already handled by adminFetch
+    }
+  }
+
+  function clearBookingFilters() {
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    document.getElementById('filterEventType').value = '';
+    document.getElementById('filterStatus').value = '';
+    loadBookings();
+  }
+
+  async function adminCancelBooking(eventId) {
+    if (!confirm('Cancel this booking? The client will be emailed.')) return;
+    try {
+      const data = await adminFetch('admin-cancel', { eventId });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast('Booking cancelled.', 'success');
+      loadBookings();
+    } catch (err) {}
+  }
+
+  async function adminResend(eventId, kind) {
+    try {
+      const data = await adminFetch('admin-resend-reminder', { eventId, kind });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast((kind === 'confirmation' ? 'Confirmation' : 'Reminder') + ' email resent.', 'success');
+    } catch (err) {}
+  }
+
+  // ── Reschedule modal ──────────────────────────────────────
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let modalEventId = null, modalEventType = null;
+  let modalToday = new Date(), modalYear = modalToday.getFullYear(), modalMonth = modalToday.getMonth();
+  let modalSelDate = null, modalSelTime = null;
+
+  function openRescheduleModal(eventId, eventType, name) {
+    modalEventId = eventId;
+    modalEventType = eventType;
+    modalSelDate = null;
+    modalSelTime = null;
+    modalYear = modalToday.getFullYear();
+    modalMonth = modalToday.getMonth();
+    document.getElementById('rescheduleModalSub').textContent = `${name} — currently booked as ${eventType}`;
+    document.getElementById('modalSlotGrid').innerHTML = '<div class="slot empty">Select a date first</div>';
+    document.getElementById('modalConfirmBtn').disabled = true;
+    document.getElementById('modalErr').textContent = '';
+    renderModalCal();
+    document.getElementById('rescheduleModal').classList.add('show');
+  }
+
+  function closeRescheduleModal() {
+    document.getElementById('rescheduleModal').classList.remove('show');
+  }
+
+  function modalDateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function renderModalCal() {
+    document.getElementById('modalMonthLabel').textContent = MONTHS[modalMonth] + ' ' + modalYear;
+    const grid = document.getElementById('modalCalGrid');
+    grid.innerHTML = '';
+    const first = new Date(modalYear, modalMonth, 1).getDay();
+    const total = new Date(modalYear, modalMonth + 1, 0).getDate();
+
+    for (let i = 0; i < first; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-cell';
+      d.style.visibility = 'hidden';
+      grid.appendChild(d);
+    }
+    for (let i = 1; i <= total; i++) {
+      const dt = new Date(modalYear, modalMonth, i);
+      const isPast = dt < new Date(modalToday.getFullYear(), modalToday.getMonth(), modalToday.getDate());
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell';
+      cell.textContent = i;
+      const iso = modalDateKey(dt);
+      if (isPast) {
+        cell.style.opacity = '.3';
+        cell.style.pointerEvents = 'none';
+      } else {
+        cell.onclick = () => modalSelectDate(iso, cell);
+      }
+      if (modalSelDate === iso) cell.classList.add('sel');
+      grid.appendChild(cell);
+    }
+    document.getElementById('modalPrevBtn').disabled = modalYear === modalToday.getFullYear() && modalMonth === modalToday.getMonth();
+  }
+
+  function modalChangeMonth(dir) {
+    modalMonth += dir;
+    if (modalMonth > 11) { modalMonth = 0; modalYear++; }
+    if (modalMonth < 0)  { modalMonth = 11; modalYear--; }
+    renderModalCal();
+  }
+
+  function modalSelectDate(iso, cellEl) {
+    document.querySelectorAll('#modalCalGrid .cal-cell').forEach(c => c.classList.remove('sel'));
+    cellEl.classList.add('sel');
+    modalSelDate = iso;
+    modalSelTime = null;
+    document.getElementById('modalConfirmBtn').disabled = true;
+    modalFetchSlots(iso);
+  }
+
+  function modalFetchSlots(iso) {
+    const slotGrid = document.getElementById('modalSlotGrid');
+    slotGrid.innerHTML = '<div class="slot empty">Loading…</div>';
+    fetch(`${CONFIG.API_URL}?date=${encodeURIComponent(iso)}&eventType=${encodeURIComponent(modalEventType)}`)
+      .then(r => r.json())
+      .then(data => {
+        slotGrid.innerHTML = '';
+        if (!data.slots || !data.slots.length) {
+          slotGrid.innerHTML = '<div class="slot empty">No slots available this day</div>';
+          return;
+        }
+        data.slots.forEach(t => {
+          const el = document.createElement('div');
+          el.className = 'slot';
+          el.textContent = t;
+          el.onclick = () => {
+            document.querySelectorAll('#modalSlotGrid .slot').forEach(s => s.classList.remove('sel'));
+            el.classList.add('sel');
+            modalSelTime = t;
+            document.getElementById('modalConfirmBtn').disabled = false;
+          };
+          slotGrid.appendChild(el);
+        });
+      })
+      .catch(() => { slotGrid.innerHTML = '<div class="slot empty">Could not load availability.</div>'; });
+  }
+
+  async function confirmModalReschedule() {
+    const btn = document.getElementById('modalConfirmBtn');
+    const err = document.getElementById('modalErr');
+    err.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Rescheduling…';
+    try {
+      const data = await adminFetch('admin-reschedule', { eventId: modalEventId, newDate: modalSelDate, newTime: modalSelTime });
+      if (data.error) {
+        err.textContent = data.error;
+        btn.disabled = false;
+        btn.textContent = 'Confirm new time';
+        return;
+      }
+      closeRescheduleModal();
+      showToast('Booking rescheduled.', 'success');
+      loadBookings();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = 'Confirm new time';
+    }
+  }
+
+  // ============================================================
+  // EVENT TYPES TAB
+  // ============================================================
+  let currentEventTypes = [];
+
+  async function loadEventTypesTab() {
+    const body = document.getElementById('eventTypesBody');
+    body.innerHTML = '<tr class="empty-row"><td colspan="6">Loading…</td></tr>';
+    try {
+      const data = await adminFetch('admin-list-event-types');
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="6">${esc(data.error)}</td></tr>`; return; }
+
+      currentEventTypes = data.eventTypes || [];
+      populateEventTypeFilter(currentEventTypes);
+
+      if (!currentEventTypes.length) { body.innerHTML = '<tr class="empty-row"><td colspan="6">No event types yet.</td></tr>'; return; }
+
+      body.innerHTML = currentEventTypes.map((t, i) => `
+        <tr class="et-row" data-idx="${i}">
+          <td><input type="text" class="id-input" value="${esc(t.id)}" disabled></td>
+          <td><input type="text" data-field="label" value="${esc(t.label)}"></td>
+          <td><input type="number" data-field="durationMins" value="${esc(t.durationMins)}" min="5" step="5"></td>
+          <td><input type="number" data-field="pricePaise" value="${Math.round((Number(t.pricePaise) || 0) / 100)}" min="0" step="1"></td>
+          <td class="checkbox-cell"><input type="checkbox" data-field="active" ${t.active === true || t.active === 'TRUE' ? 'checked' : ''}></td>
+          <td><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
+        </tr>`).join('');
+    } catch (err) {}
+  }
+
+  function populateEventTypeFilter(types) {
+    const sel = document.getElementById('filterEventType');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All</option>' + types.map(t => `<option value="${esc(t.id)}">${esc(t.label)}</option>`).join('');
+    sel.value = current;
+  }
+
+  async function saveEventType(idx) {
+    const row = document.querySelector(`.et-row[data-idx="${idx}"]`);
+    const t = currentEventTypes[idx];
+    const label = row.querySelector('[data-field="label"]').value.trim();
+    const durationMins = Number(row.querySelector('[data-field="durationMins"]').value);
+    const priceRupees = Number(row.querySelector('[data-field="pricePaise"]').value);
+    const active = row.querySelector('[data-field="active"]').checked;
+
+    if (!label || !durationMins) { showToast('Label and duration are required.', 'error'); return; }
+
+    try {
+      const data = await adminFetch('admin-upsert-event-type', {
+        id: t.id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active
+      });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast(`"${label}" saved.`, 'success');
+      loadEventTypesTab();
+    } catch (err) {}
+  }
+
+  async function createEventType() {
+    const idInput = document.getElementById('newEtId');
+    const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    const label = document.getElementById('newEtLabel').value.trim();
+    const durationMins = Number(document.getElementById('newEtDuration').value);
+    const priceRupees = Number(document.getElementById('newEtPrice').value);
+    const statusEl = document.getElementById('etFormStatus');
+
+    if (!id || !label || !durationMins) {
+      statusEl.textContent = 'ID, label, and duration are required.';
+      statusEl.className = 'form-status error';
+      return;
+    }
+
+    try {
+      const data = await adminFetch('admin-upsert-event-type', {
+        id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active: true
+      });
+      if (data.error) {
+        statusEl.textContent = data.error;
+        statusEl.className = 'form-status error';
+        return;
+      }
+      statusEl.textContent = `"${label}" added.`;
+      statusEl.className = 'form-status success';
+      idInput.value = '';
+      document.getElementById('newEtLabel').value = '';
+      document.getElementById('newEtDuration').value = '30';
+      document.getElementById('newEtPrice').value = '0';
+      loadEventTypesTab();
+    } catch (err) {}
+  }
+
+  // ============================================================
+  // COUPONS TAB
+  // ============================================================
+  let editingCouponCode = null;
+
+  function onCouponTypeChange() {
+    const type = document.getElementById('couponDiscountType').value;
+    document.getElementById('couponValueLabel').textContent = type === 'percent' ? 'Percent off (%)' : 'Amount off (₹)';
+  }
+
+  function onCouponUsageChange() {
+    const usage = document.getElementById('couponUsageType').value;
+    document.getElementById('couponMaxUsesField').style.display = usage === 'reusable' ? 'flex' : 'none';
+  }
+
+  async function loadCoupons() {
+    const body = document.getElementById('couponsBody');
+    body.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
+    try {
+      const data = await adminFetch('admin-list-coupons');
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="7">${esc(data.error)}</td></tr>`; return; }
+
+      const coupons = data.coupons || [];
+      if (!coupons.length) { body.innerHTML = '<tr class="empty-row"><td colspan="7">No coupons yet.</td></tr>'; return; }
+
+      body.innerHTML = coupons.map(c => {
+        const discountLabel = c.discountType === 'percent' ? `${c.discountValue}% off` : `₹${c.discountValue} off`;
+        const limit = c.usageType === 'one-time' ? '1' : (c.maxUses === '' || c.maxUses == null ? '∞' : c.maxUses);
+        const activeClass = (c.active === true || c.active === 'TRUE') ? 'badge-active' : 'badge-inactive';
+        const activeLabel = (c.active === true || c.active === 'TRUE') ? 'Active' : 'Inactive';
+        const expiry = c.expiry ? new Date(c.expiry).toLocaleDateString('en-IN') : '—';
+        return `<tr>
+          <td>${esc(c.code)}</td>
+          <td>${esc(discountLabel)}</td>
+          <td>${esc(c.usageType)}</td>
+          <td>${esc(c.usedCount || 0)} / ${limit}</td>
+          <td><span class="badge ${activeClass}">${activeLabel}</span></td>
+          <td>${expiry}</td>
+          <td>
+            <div class="row-actions">
+              <button onclick='editCoupon(${JSON.stringify(c).replace(/'/g, "&#39;")})'>Edit</button>
+              <button class="danger" onclick="deactivateCoupon('${esc(c.code)}')">Deactivate</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch (err) {}
+  }
+
+  function editCoupon(c) {
+    editingCouponCode = c.code;
+    document.getElementById('couponCode').value = c.code;
+    document.getElementById('couponCode').disabled = true;
+    document.getElementById('couponDiscountType').value = c.discountType;
+    document.getElementById('couponDiscountValue').value = c.discountValue;
+    document.getElementById('couponUsageType').value = c.usageType;
+    document.getElementById('couponMaxUses').value = (c.maxUses === '' || c.maxUses == null) ? '' : c.maxUses;
+    document.getElementById('couponExpiry').value = c.expiry ? String(c.expiry).slice(0, 10) : '';
+    onCouponTypeChange();
+    onCouponUsageChange();
+    document.getElementById('couponSubmitBtn').textContent = 'Save Coupon';
+    document.getElementById('couponCancelEditBtn').style.display = 'inline-block';
+    document.getElementById('tab-coupons').scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  function resetCouponForm() {
+    editingCouponCode = null;
+    document.getElementById('couponCode').value = '';
+    document.getElementById('couponCode').disabled = false;
+    document.getElementById('couponDiscountType').value = 'flat';
+    document.getElementById('couponDiscountValue').value = 0;
+    document.getElementById('couponUsageType').value = 'one-time';
+    document.getElementById('couponMaxUses').value = '';
+    document.getElementById('couponExpiry').value = '';
+    onCouponTypeChange();
+    onCouponUsageChange();
+    document.getElementById('couponSubmitBtn').textContent = 'Create Coupon';
+    document.getElementById('couponCancelEditBtn').style.display = 'none';
+    document.getElementById('couponFormStatus').textContent = '';
+  }
+
+  async function submitCoupon() {
+    const code = document.getElementById('couponCode').value.trim();
+    const discountType = document.getElementById('couponDiscountType').value;
+    const discountValue = Number(document.getElementById('couponDiscountValue').value);
+    const usageType = document.getElementById('couponUsageType').value;
+    const maxUsesRaw = document.getElementById('couponMaxUses').value.trim();
+    const expiry = document.getElementById('couponExpiry').value;
+    const statusEl = document.getElementById('couponFormStatus');
+
+    if (!code || discountValue == null || isNaN(discountValue)) {
+      statusEl.textContent = 'Code and discount value are required.';
+      statusEl.className = 'form-status error';
+      return;
+    }
+
+    try {
+      const data = await adminFetch('admin-upsert-coupon', {
+        code, discountType, discountValue,
+        usageType, maxUses: usageType === 'reusable' && maxUsesRaw !== '' ? Number(maxUsesRaw) : '',
+        active: true, expiry: expiry || ''
+      });
+      if (data.error) {
+        statusEl.textContent = data.error;
+        statusEl.className = 'form-status error';
+        return;
+      }
+      statusEl.textContent = `Coupon "${code.toUpperCase()}" saved.`;
+      statusEl.className = 'form-status success';
+      resetCouponForm();
+      loadCoupons();
+    } catch (err) {}
+  }
+
+  async function deactivateCoupon(code) {
+    if (!confirm(`Deactivate coupon "${code}"?`)) return;
+    try {
+      const data = await adminFetch('admin-deactivate-coupon', { code });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast(`"${code}" deactivated.`, 'success');
+      loadCoupons();
+    } catch (err) {}
+  }
+
+  // ============================================================
+  // INIT
+  // ============================================================
+  document.getElementById('tokenInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitToken(); });
+
+  if (getToken()) {
+    document.getElementById('authPage').style.display = 'none';
+    adminFetch('admin-list-event-types')
+      .then(data => {
+        if (data.error) { showAuthGate(data.error); }
+        else { enterDashboard(); }
+      })
+      .catch(() => {}); // adminFetch already shows the auth gate on Unauthorized
+  } else {
+    showAuthGate();
+  }
+</script>
+</body>
+</html>
