@@ -8,5 +8,5 @@
 
 const CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbyZ0MnTwo1zGttXNkKU-7EgrjWkfAn00zebit9C1cgTsCnax-M4qoQMBY7rphuqHhytVg/exec',
-  RAZORPAY_KEY_ID: 'rzp_live_TPADM2b83cSu8Q'
+  RAZORPAY_KEY_ID: 'rzp_test_TPALC8ZMPlVgAs'
 };
