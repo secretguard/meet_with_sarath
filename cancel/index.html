@@ -3,26 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  (function () {
+    var stored = localStorage.getItem('meetWithSarathTheme');
+    if (stored === 'light' || stored === 'dark') {
+      document.documentElement.setAttribute('data-theme', stored);
+    }
+  })();
+</script>
 <title>Cancel Booking — Meet with Sarath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0e14; --panel:#10161f; --line:#1f2833;
-    --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
-    --accent-soft:#cda86814; --accent-dim:#cda86833;
-    --avatar-bg:#1c4d3a; --red:#e0685c; --red-dim:#e0685c33;
+    --bg:#faf8f5; --panel:#ffffff; --surface:#f4f1ec; --border:#e2ded6;
+    --text:#17191d; --muted:#5c6370; --accent:#8f6a30;
+    --accent-soft:#8f6a3014; --accent-dim:#8f6a3033;
+    --red:#bd3f34; --red-dim:#bd3f3433;
+    --btn-text:#ffffff;
+    --shadow:0 1px 2px #17191d08, 0 12px 32px #17191d0f;
+    --avatar-bg:#1c4d3a; --avatar-text:#cda868;
     --serif:'Playfair Display', Georgia, serif;
     --sans:'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
   }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0a0e14; --panel:#10161f; --surface:#161d29; --border:#232c3a;
+      --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+      --accent-soft:#cda86814; --accent-dim:#cda86833;
+      --red:#e0685c; --red-dim:#e0685c33;
+      --btn-text:#0a0e14;
+      --shadow:0 0 0 1px #ffffff0d, 0 16px 40px #00000066;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0e14; --panel:#10161f; --surface:#161d29; --border:#232c3a;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+    --accent-soft:#cda86814; --accent-dim:#cda86833;
+    --red:#e0685c; --red-dim:#e0685c33;
+    --btn-text:#0a0e14;
+    --shadow:0 0 0 1px #ffffff0d, 0 16px 40px #00000066;
+  }
+
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;}
-  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
-  .card{width:100%;max-width:480px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:48px 40px;text-align:center;animation:fadeUp .5s ease both;}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:64px 20px;}
 
-  .icon-ring{width:54px;height:54px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 26px;}
+  .theme-toggle{position:fixed;top:22px;right:22px;z-index:40;width:38px;height:38px;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,color .2s,transform .15s;box-shadow:var(--shadow);}
+  .theme-toggle:hover{color:var(--accent);border-color:var(--accent-dim);transform:scale(1.05);}
+  .theme-toggle svg{width:17px;height:17px;}
+  @media (max-width:680px){ .theme-toggle{top:14px;right:14px;} }
+
+  .card{width:100%;max-width:480px;background:var(--panel);border-radius:20px;padding:56px 44px;text-align:center;box-shadow:var(--shadow);animation:fadeUp .5s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+  .icon-ring{width:54px;height:54px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 28px;}
   .icon-ring svg{width:22px;height:22px;color:var(--muted);}
   .icon-ring.confirm{border-color:var(--red-dim);}
   .icon-ring.confirm svg{color:var(--red);}
@@ -31,23 +67,23 @@
   .icon-ring.error{border-color:var(--red-dim);}
   .icon-ring.error svg{color:var(--red);}
 
-  h1{font-family:var(--serif);font-size:25px;font-weight:500;color:#fff;margin-bottom:12px;line-height:1.2;}
-  .subtitle{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:30px;}
+  h1{font-size:23px;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.2;}
+  .subtitle{font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:32px;}
 
-  .booking-detail{background:#0d131c;border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:26px;text-align:left;}
-  .detail-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
-  .detail-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:8px;}
+  .booking-detail{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:28px;text-align:left;}
+  .detail-label{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+  .detail-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-bottom:9px;}
   .detail-row:last-child{margin-bottom:0;}
-  .detail-row svg{width:14px;height:14px;color:var(--accent);flex-shrink:0;}
+  .detail-row svg{width:14px;height:14px;color:var(--muted);flex-shrink:0;}
   .detail-value{color:var(--text);}
 
   .btn-row{display:flex;flex-direction:column;gap:10px;}
-  .btn-cancel{width:100%;padding:13px;background:var(--red);border:none;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#fff;font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn-cancel{width:100%;padding:14px;background:var(--red);border:none;border-radius:9px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#fff;font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
   .btn-cancel:hover{opacity:.85;}
   .btn-cancel:disabled{opacity:.4;cursor:default;}
-  .btn-back{width:100%;padding:12px;background:none;border:1px solid var(--line);border-radius:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;text-decoration:none;display:block;line-height:2.1;}
+  .btn-back{width:100%;padding:13px;background:none;border:1px solid var(--border);border-radius:9px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;text-decoration:none;display:block;line-height:2.1;}
   .btn-back:hover{border-color:var(--accent);color:var(--accent);}
-  .btn-book{display:inline-block;margin-top:4px;padding:12px 28px;border:1px solid var(--line);border-radius:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:border-color .2s,color .2s;font-family:var(--sans);}
+  .btn-book{display:inline-block;margin-top:4px;padding:13px 28px;border:1px solid var(--border);border-radius:9px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:border-color .2s,color .2s;font-family:var(--sans);}
   .btn-book:hover{border-color:var(--accent);color:var(--accent);}
 
   .spinner{width:13px;height:13px;border:1.5px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
@@ -55,19 +91,24 @@
   .btn-cancel.loading .btn-label{opacity:.6;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  .host-footer{margin-top:34px;padding-top:20px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:10px;}
-  .host-avatar{width:30px;height:30px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0;}
+  .host-footer{margin-top:36px;padding-top:22px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;}
+  .host-avatar{width:30px;height:30px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:11px;font-weight:600;color:var(--avatar-text);flex-shrink:0;}
   .host-info{text-align:left;}
   .host-name{font-size:12px;color:var(--text);}
   .host-role{font-size:10px;color:var(--muted);letter-spacing:.05em;}
 
   .screen{display:none;}
   .screen.active{display:block;}
-  .error-inline{font-size:11.5px;color:var(--red);padding:9px 12px;border:1px solid var(--red-dim);border-radius:7px;background:#e0685c0d;margin-bottom:16px;display:none;}
+  .error-inline{font-size:11.5px;color:var(--red);padding:10px 14px;border:1px solid var(--red-dim);border-radius:8px;background:var(--red-dim);margin-bottom:18px;display:none;}
   .error-inline.show{display:block;}
 </style>
 </head>
 <body>
+
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch theme">
+  <svg id="themeToggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>
+</button>
+
 <main>
 <div class="page">
   <div class="card">
@@ -161,6 +202,35 @@
 
 <script src="/config.js"></script>
 <script>
+  // ── THEME TOGGLE (identical logic on every page — shared localStorage
+  // key means the choice carries across the whole site automatically) ──
+  const THEME_KEY = 'meetWithSarathTheme';
+  const SUN_PATH = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+  const MOON_PATH = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+
+  function getCurrentTheme() {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function syncThemeToggleUI(theme) {
+    const btn = document.getElementById('themeToggle');
+    const icon = document.getElementById('themeToggleIcon');
+    if (!btn || !icon) return;
+    icon.innerHTML = theme === 'dark' ? SUN_PATH : MOON_PATH;
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  }
+
+  function toggleTheme() {
+    const next = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    document.documentElement.setAttribute('data-theme', next);
+    syncThemeToggleUI(next);
+  }
+
+  syncThemeToggleUI(getCurrentTheme());
+
   const params  = new URLSearchParams(window.location.search);
   const eventId = params.get('eventId');
   const email   = params.get('email');
