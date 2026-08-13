@@ -457,7 +457,16 @@
   // ============================================================
   // BOOKINGS TAB
   // ============================================================
+  // Bumped at the start of every loadBookings() call; a response is only
+  // rendered if it's still the most recent request when it resolves. Apps
+  // Script's latency is variable enough that an earlier call (e.g. the one
+  // fired on dashboard entry) can resolve AFTER a later one (e.g. fired
+  // right after cancelling a booking) — without this guard, the stale
+  // response would silently overwrite the fresh one.
+  let bookingsReqId = 0;
+
   async function loadBookings() {
+    const reqId = ++bookingsReqId;
     const body = document.getElementById('bookingsBody');
     body.innerHTML = '<tr class="empty-row"><td colspan="11">Loading…</td></tr>';
 
@@ -470,6 +479,7 @@
 
     try {
       const data = await adminFetch('admin-list-bookings', filters);
+      if (reqId !== bookingsReqId) return; // a newer request has since started — discard this stale response
       if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="11">${esc(data.error)}</td></tr>`; return; }
 
       const bookings = data.bookings || [];
@@ -501,7 +511,9 @@
         </tr>`;
       }).join('');
     } catch (err) {
-      // Unauthorized already handled by adminFetch
+      // Unauthorized already handled by adminFetch; a genuine fetch failure
+      // still deserves a visible state rather than staying on "Loading…"
+      if (reqId === bookingsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="11">Could not load bookings. Please try again.</td></tr>';
     }
   }
 
@@ -519,7 +531,7 @@
       const data = await adminFetch('admin-cancel', { eventId });
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast('Booking cancelled.', 'success');
-      loadBookings();
+      await loadBookings();
     } catch (err) {}
   }
 
@@ -651,7 +663,7 @@
       }
       closeRescheduleModal();
       showToast('Booking rescheduled.', 'success');
-      loadBookings();
+      await loadBookings();
     } catch (e) {
       btn.disabled = false;
       btn.textContent = 'Confirm new time';
@@ -662,12 +674,15 @@
   // EVENT TYPES TAB
   // ============================================================
   let currentEventTypes = [];
+  let eventTypesReqId = 0; // see bookingsReqId's comment — same stale-response guard
 
   async function loadEventTypesTab() {
+    const reqId = ++eventTypesReqId;
     const body = document.getElementById('eventTypesBody');
     body.innerHTML = '<tr class="empty-row"><td colspan="6">Loading…</td></tr>';
     try {
       const data = await adminFetch('admin-list-event-types');
+      if (reqId !== eventTypesReqId) return;
       if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="6">${esc(data.error)}</td></tr>`; return; }
 
       currentEventTypes = data.eventTypes || [];
@@ -684,7 +699,9 @@
           <td class="checkbox-cell"><input type="checkbox" data-field="active" ${t.active === true || t.active === 'TRUE' ? 'checked' : ''}></td>
           <td><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
         </tr>`).join('');
-    } catch (err) {}
+    } catch (err) {
+      if (reqId === eventTypesReqId) body.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load event types. Please try again.</td></tr>';
+    }
   }
 
   function populateEventTypeFilter(types) {
@@ -710,7 +727,7 @@
       });
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast(`"${label}" saved.`, 'success');
-      loadEventTypesTab();
+      await loadEventTypesTab();
     } catch (err) {}
   }
 
@@ -743,7 +760,7 @@
       document.getElementById('newEtLabel').value = '';
       document.getElementById('newEtDuration').value = '30';
       document.getElementById('newEtPrice').value = '0';
-      loadEventTypesTab();
+      await loadEventTypesTab();
     } catch (err) {}
   }
 
@@ -762,11 +779,15 @@
     document.getElementById('couponMaxUsesField').style.display = usage === 'reusable' ? 'flex' : 'none';
   }
 
+  let couponsReqId = 0; // see bookingsReqId's comment — same stale-response guard
+
   async function loadCoupons() {
+    const reqId = ++couponsReqId;
     const body = document.getElementById('couponsBody');
     body.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
     try {
       const data = await adminFetch('admin-list-coupons');
+      if (reqId !== couponsReqId) return;
       if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="7">${esc(data.error)}</td></tr>`; return; }
 
       const coupons = data.coupons || [];
@@ -793,7 +814,9 @@
           </td>
         </tr>`;
       }).join('');
-    } catch (err) {}
+    } catch (err) {
+      if (reqId === couponsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load coupons. Please try again.</td></tr>';
+    }
   }
 
   function editCoupon(c) {
@@ -854,10 +877,14 @@
         statusEl.className = 'form-status error';
         return;
       }
-      statusEl.textContent = `Coupon "${code.toUpperCase()}" saved.`;
-      statusEl.className = 'form-status success';
+      const savedCode = code.toUpperCase();
+      // resetCouponForm() clears couponFormStatus as part of resetting the
+      // form — call it first, then set the success message, or the message
+      // gets wiped the instant it's shown.
       resetCouponForm();
-      loadCoupons();
+      statusEl.textContent = `Coupon "${savedCode}" saved.`;
+      statusEl.className = 'form-status success';
+      await loadCoupons();
     } catch (err) {}
   }
 
@@ -867,7 +894,7 @@
       const data = await adminFetch('admin-deactivate-coupon', { code });
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast(`"${code}" deactivated.`, 'success');
-      loadCoupons();
+      await loadCoupons();
     } catch (err) {}
   }
 
