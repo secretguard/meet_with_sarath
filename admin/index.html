@@ -177,9 +177,19 @@
   .checkbox-cell{display:flex;align-items:center;justify-content:center;}
   .checkbox-cell input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
 
+  /* Full-width description row under each event type — a wide textarea
+     doesn't fit a table column, so it gets its own colspan row instead. */
+  .et-desc-row td{white-space:normal;padding-top:0;}
+  .et-desc-row label{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .et-desc-row textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 11px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;resize:vertical;min-height:44px;}
+  .et-desc-row textarea:focus{border-color:var(--accent);}
+
   /* ── FORM (add event type / coupon) ─────────────────────── */
   .inline-form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
   .inline-form .filter-field input, .inline-form .filter-field select{min-width:110px;}
+  .inline-form .filter-field.full-width{flex-basis:100%;}
+  .inline-form .filter-field.full-width textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;resize:vertical;min-height:44px;width:100%;}
+  .inline-form .filter-field.full-width textarea:focus{border-color:var(--accent);}
   .form-status{font-size:11.5px;margin-top:12px;min-height:1px;}
   .form-status.success{color:var(--accent);}
   .form-status.error{color:var(--red);}
@@ -347,6 +357,10 @@
         <div class="filter-field">
           <label>Price (₹)</label>
           <input type="number" id="newEtPrice" min="0" step="1" value="0">
+        </div>
+        <div class="filter-field full-width">
+          <label>Description</label>
+          <textarea id="newEtDescription" rows="2" placeholder="Short marketing copy shown on the booking page once this type is selected. Leave blank to auto-generate."></textarea>
         </div>
         <button class="btn" onclick="createEventType()">Add Event Type</button>
       </div>
@@ -979,6 +993,12 @@
           <td><input type="number" data-field="pricePaise" value="${Math.round((Number(t.pricePaise) || 0) / 100)}" min="0" step="1"></td>
           <td class="checkbox-cell"><input type="checkbox" data-field="active" ${t.active === true || t.active === 'TRUE' ? 'checked' : ''}></td>
           <td><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
+        </tr>
+        <tr class="et-desc-row" data-idx="${i}">
+          <td colspan="6">
+            <label>Description</label>
+            <textarea data-field="description" rows="2" placeholder="Short marketing copy shown on the booking page once this type is selected.">${esc(t.description || '')}</textarea>
+          </td>
         </tr>`).join('');
     } catch (err) {
       if (reqId === eventTypesReqId) body.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load event types. Please try again.</td></tr>';
@@ -994,17 +1014,19 @@
 
   async function saveEventType(idx) {
     const row = document.querySelector(`.et-row[data-idx="${idx}"]`);
+    const descRow = document.querySelector(`.et-desc-row[data-idx="${idx}"]`);
     const t = currentEventTypes[idx];
     const label = row.querySelector('[data-field="label"]').value.trim();
     const durationMins = Number(row.querySelector('[data-field="durationMins"]').value);
     const priceRupees = Number(row.querySelector('[data-field="pricePaise"]').value);
     const active = row.querySelector('[data-field="active"]').checked;
+    const description = descRow.querySelector('[data-field="description"]').value.trim();
 
     if (!label || !durationMins) { showToast('Label and duration are required.', 'error'); return; }
 
     try {
       const data = await adminFetch('admin-upsert-event-type', {
-        id: t.id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active
+        id: t.id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active, description
       });
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast(`"${label}" saved.`, 'success');
@@ -1018,6 +1040,7 @@
     const label = document.getElementById('newEtLabel').value.trim();
     const durationMins = Number(document.getElementById('newEtDuration').value);
     const priceRupees = Number(document.getElementById('newEtPrice').value);
+    const description = document.getElementById('newEtDescription').value.trim();
     const statusEl = document.getElementById('etFormStatus');
 
     if (!id || !label || !durationMins) {
@@ -1028,7 +1051,7 @@
 
     try {
       const data = await adminFetch('admin-upsert-event-type', {
-        id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active: true
+        id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active: true, description
       });
       if (data.error) {
         statusEl.textContent = data.error;
@@ -1041,6 +1064,7 @@
       document.getElementById('newEtLabel').value = '';
       document.getElementById('newEtDuration').value = '30';
       document.getElementById('newEtPrice').value = '0';
+      document.getElementById('newEtDescription').value = '';
       await loadEventTypesTab();
     } catch (err) {}
   }

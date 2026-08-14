@@ -499,12 +499,13 @@
 
       EVENT_TYPES = {};
       data.eventTypes.forEach(t => {
+        const autoDescription = `A ${t.duration}-minute ${t.label}.`;
         EVENT_TYPES[t.id] = {
           label: t.label,
           duration: t.duration,
           price: Math.round(t.price / 100),   // rupees, display only
           pricePaise: t.price,                 // real unit, used for all logic
-          description: `A ${t.duration}-minute ${t.label}.`
+          description: (t.description && t.description.trim()) || autoDescription
         };
       });
 
