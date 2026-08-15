@@ -93,9 +93,6 @@
   .meta-item strong{color:var(--text);font-weight:500;}
   .meta-icon{width:15px;height:15px;flex-shrink:0;color:var(--muted);}
   .desc{font-size:15px;color:var(--muted);line-height:1.7;}
-  .left-footer{margin-top:auto;font-size:10px;color:var(--muted);letter-spacing:.05em;border-top:1px solid var(--border);padding-top:20px;line-height:1.8;}
-  .tz-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;font-size:10px;color:var(--muted);margin-top:8px;}
-  .tz-badge svg{width:10px;height:10px;flex-shrink:0;}
 
   /* RIGHT PANEL */
   .right{flex:1;padding:44px 40px;display:flex;flex-direction:column;min-width:0;}
@@ -255,6 +252,10 @@
             Google Meet
           </div>
           <div class="meta-item">
+            <svg class="meta-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20 15.3 15.3 0 010-20z"/></svg>
+            <span id="clientTzLabel">Detecting…</span>
+          </div>
+          <div class="meta-item">
             <svg class="meta-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Mon – Sat, 9 AM – 8 PM IST
           </div>
@@ -262,13 +263,6 @@
       </div>
       <div class="divider"></div>
       <div class="desc" id="descText">Pick a session type to see what it's about.</div>
-      <div class="left-footer">
-        Host timezone: IST (India)<br>
-        <div class="tz-badge" id="clientTzBadge">
-          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span id="clientTzLabel">Detecting…</span>
-        </div>
-      </div>
     </div>
 
     <!-- RIGHT -->
