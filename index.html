@@ -852,7 +852,8 @@
       name: (fname + ' ' + lname).trim(),
       email: email,
       topic: topic,
-      eventType: selectedType
+      eventType: selectedType,
+      clientTimezone: CLIENT_TZ   // IANA zone name, or null if detection failed
     };
   }
 
