@@ -884,6 +884,8 @@
       const data = await res.json();
       if (data.success) {
         showSuccess(payload, data.eventId);
+      } else if (data.code === 'SLOT_TAKEN') {
+        handleSlotTaken(data.error);
       } else {
         showError(data.error || 'Something went wrong. Please try again.');
         setSubmitLoading(false);
@@ -892,6 +894,22 @@
       showError('Network error. Please check your connection and try again.');
       setSubmitLoading(false);
     }
+  }
+
+  // Someone else booked this exact slot between the visitor loading the
+  // grid and submitting — the backend's script-lock re-check caught it.
+  // Rather than a generic error left on the (now-wrong) details step, send
+  // the visitor back to the time step with the specific reason shown right
+  // where the stale slot was, then drop the cached list and reload live
+  // availability so the grid they see next is actually accurate.
+  function handleSlotTaken(message) {
+    setSubmitLoading(false);
+    selSlot = null;
+    delete cachedSlots[dateKey(selDate) + ':' + selectedType];
+    reopenStep('time');
+    document.getElementById('slotsContainer').innerHTML =
+      `<div class="no-slots">${message || 'That slot was just booked by someone else — please pick another time.'}</div>`;
+    setTimeout(() => loadSlots(selDate), 1400);
   }
 
   // ── PAID BOOKING (Razorpay) ──────────────────────────────────
