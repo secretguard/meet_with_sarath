@@ -159,6 +159,11 @@
   .slot{min-height:44px;padding:10px 6px;border:1px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s;background:var(--surface);}
   .slot:hover{border-color:var(--accent);color:var(--text);}
   .slot.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  /* Two-line variant: visitor's local time (prominent) over the IST
+     reference (small, always muted regardless of hover/selected state). */
+  .slot.two-line{flex-direction:column;gap:2px;min-height:50px;padding:8px 6px;}
+  .slot-primary{font-size:14px;font-weight:500;line-height:1.25;color:inherit;}
+  .slot-secondary{font-size:10.5px;line-height:1.2;color:var(--muted);}
   .no-slots,.loading-slots{font-size:14px;color:var(--muted);padding:6px 0;}
   .loading-slots{display:flex;align-items:center;gap:8px;}
   .spinner{width:13px;height:13px;border:1.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
@@ -471,13 +476,23 @@
     return rupees > 0 ? '₹' + rupees.toLocaleString('en-IN') : 'Free';
   }
 
-  // ── TIMEZONE DISPLAY (informational only — all times sent/shown are IST) ──
+  // ── TIMEZONE DETECTION ──────────────────────────────────────────
+  // CLIENT_TZ drives the slot grid's local-time conversion below. All times
+  // actually SENT to the backend remain IST strings — this only changes
+  // what's displayed. If detection fails, CLIENT_TZ stays null and the
+  // slot grid falls back to the original single-line IST-only display.
+  let CLIENT_TZ = null;
   try {
     const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const isIST = clientTz === 'Asia/Kolkata' || clientTz === 'Asia/Calcutta';
-    document.getElementById('clientTzLabel').textContent = isIST ? 'Showing times in IST' : `Times shown in IST (your zone: ${clientTz})`;
+    CLIENT_TZ = clientTz;
+    document.getElementById('clientTzLabel').textContent = isIST ? 'Showing times in IST' : `Showing local time (${clientTz})`;
   } catch (e) {
     document.getElementById('clientTzLabel').textContent = 'Times shown in IST';
+  }
+
+  function useLocalTime() {
+    return !!CLIENT_TZ && CLIENT_TZ !== 'Asia/Kolkata' && CLIENT_TZ !== 'Asia/Calcutta';
   }
 
   // ── STATE ────────────────────────────────────────────────────
@@ -691,6 +706,46 @@
     return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
+  // ── IST SLOT → UTC / LOCAL TIME CONVERSION ──────────────────────
+  // Slot strings from the backend (e.g. "9:45 AM") are IST wall-clock
+  // times for the selected date. Reconstruct the real UTC instant using
+  // the same fixed +5:30 offset arithmetic as istToUtcDate() in Code.gs
+  // (IST has no DST, so this never drifts), then format that instant in
+  // whichever timezone is needed. What gets submitted to the backend is
+  // always the original IST slot string — this is a display-only step.
+  const IST_OFFSET_MS = 5.5 * 60 * 60000;
+
+  function parseIstSlotToUtc(dateStr, slotStr) {
+    const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec((slotStr || '').trim());
+    if (!m) return null;
+    let h = parseInt(m[1], 10) % 12;
+    if (/pm/i.test(m[3])) h += 12;
+    const min = parseInt(m[2], 10);
+    const [y, mo, d] = dateStr.split('-').map(Number);
+    const utcMs = Date.UTC(y, mo - 1, d, 0, 0, 0) + (h * 60 + min) * 60000 - IST_OFFSET_MS;
+    return new Date(utcMs);
+  }
+
+  function formatTimeInTz(date, tz) {
+    try {
+      return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: tz }).format(date);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Given an IST slot string, returns { local, ist } display strings if a
+  // local conversion is possible, otherwise null (caller falls back to the
+  // plain IST-only display).
+  function slotDisplayParts(dateStr, slotStr) {
+    if (!useLocalTime()) return null;
+    const utcDate = parseIstSlotToUtc(dateStr, slotStr);
+    if (!utcDate) return null;
+    const local = formatTimeInTz(utcDate, CLIENT_TZ);
+    if (!local) return null;
+    return { local, ist: slotStr };
+  }
+
   // ── DATE / SLOT SELECTION ────────────────────────────────────
   function selectDate(date) {
     selDate = date;
@@ -729,12 +784,26 @@
       cont.innerHTML = '<div class="no-slots">No availability on this day — please pick another date.</div>';
       return;
     }
+    const dateStr = dateKey(selDate);
     const grid = document.createElement('div');
     grid.className = 'slots-grid';
     slots.forEach(t => {
       const el = document.createElement('div');
       el.className = 'slot' + (selSlot === t ? ' selected' : '');
-      el.textContent = t;
+      const parts = slotDisplayParts(dateStr, t);
+      if (parts) {
+        el.classList.add('two-line');
+        const primary = document.createElement('span');
+        primary.className = 'slot-primary';
+        primary.textContent = parts.local;
+        const secondary = document.createElement('span');
+        secondary.className = 'slot-secondary';
+        secondary.textContent = parts.ist + ' IST';
+        el.appendChild(primary);
+        el.appendChild(secondary);
+      } else {
+        el.textContent = t;
+      }
       el.onclick = () => selectSlot(t);
       grid.appendChild(el);
     });
@@ -745,7 +814,8 @@
   function selectSlot(t) {
     selSlot = t;
     renderSlots(cachedSlots[dateKey(selDate) + ':' + selectedType]);
-    document.getElementById('stripTimeValue').textContent = `${t} IST`;
+    const parts = slotDisplayParts(dateKey(selDate), t);
+    document.getElementById('stripTimeValue').textContent = parts ? `${parts.local} (${parts.ist} IST)` : `${t} IST`;
     reopenStep('details');
   }
 
@@ -898,9 +968,11 @@
     sc.classList.add('show');
 
     const type = EVENT_TYPES[payload.eventType];
+    const parts = slotDisplayParts(dateKey(selDate), selSlot);
+    const timeStr = parts ? `${parts.local} (${parts.ist} IST)` : `${selSlot} IST`;
     document.getElementById('successDetail').innerHTML =
       `<strong>${payload.name}</strong>, your ${type.label} with Sarath G is set for<br>
-       <span class="gold">${fmtDate(selDate)} at ${selSlot} IST</span>.<br><br>
+       <span class="gold">${fmtDate(selDate)} at ${timeStr}</span>.<br><br>
        A confirmation email is on its way to <strong>${payload.email}</strong>.`;
   }
 
