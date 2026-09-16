@@ -44,18 +44,23 @@ it after you've started editing prices via the dashboard will not touch your
 edits.
 
 **If you already have a live sheet from an earlier version:** the newer
-`Bookings` columns (`clientTimezone`, `noShowMarkedAt`, `noShowNudgesSent`)
-are added automatically the first time the backend touches the sheet after
-you deploy the new `Code.gs` — no manual column-adding needed. `status` also
-gains a new value, `no-show`, alongside `confirmed`/`cancelled`/`rescheduled`.
+`Bookings` columns (`clientTimezone`, `noShowMarkedAt`, `noShowNudgesSent`,
+`source`) and the `Availability` / `Settings` tabs are created automatically
+the first time the backend touches the sheet after you deploy the new
+`Code.gs` — no manual editing needed. `Availability` is seeded with all seven
+days on, `09:00-20:00` (the old hardcoded hours), so nothing changes until
+you edit it in the dashboard. `status` gains `no-show` and `completed`
+alongside `confirmed`/`cancelled`/`rescheduled`.
 
 Final schema, for reference:
 
 | Tab | Columns |
 |---|---|
-| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent` |
+| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent, source` |
 | `EventTypes` | `id, label, durationMins, pricePaise, active` |
 | `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
+| `Availability` | `key, enabled, windows, note` — `key` is `mon`..`sun` or `YYYY-MM-DD`; `windows` like `09:00-12:00, 14:00-20:00` (IST) |
+| `Settings` | `key, value` — `minNoticeHours`, `bufferMins` |
 
 A few notes on units and blanks: all prices are in **paise** (₹1 = 100),
 matching Razorpay's own unit — including a flat-discount coupon's

@@ -117,7 +117,16 @@
 
   /* ── TABLE ───────────────────────────────────────────────── */
   .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
-  table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  /* Cells wrap by default so the table fits the panel width; the sticky
+     actions column stays pinned to the right edge if it ever does overflow
+     (very narrow windows), so the ••• menu is always reachable without a
+     horizontal scroll. */
+  th.col-actions, td.col-actions{position:sticky;right:0;background:var(--panel);text-align:right;width:44px;box-shadow:-8px 0 8px -8px #17191d22;}
+  thead th.col-actions{background:var(--surface);}
+  tbody tr:hover td.col-actions{background:var(--surface);}
+  .cell-stack{display:flex;flex-direction:column;gap:2px;}
+  .cell-tertiary{color:var(--muted);font-size:10.5px;}
   /* Same understated all-caps label treatment as the booking page's step
      titles ("SELECT A DATE", "YOUR DETAILS") — font-size:9px, letter-
      spacing:.14em — reused here instead of inventing a new header style. */
@@ -142,6 +151,7 @@
   .badge-cancelled{background:var(--red-dim);color:var(--red);}
   .badge-rescheduled{background:var(--border);color:var(--muted);}
   .badge-no-show{background:var(--red-dim);color:var(--red);}
+  .badge-completed{background:var(--green-dim);color:var(--green);}
   .badge-active{background:var(--green-dim);color:var(--green);}
   .badge-inactive{background:var(--border);color:var(--muted);}
 
@@ -221,11 +231,63 @@
   .slot.sel{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
   .slot.empty{grid-column:1/-1;color:var(--muted);font-size:11px;text-align:left;padding:0;background:none;border:none;cursor:default;}
 
+  /* ── STATS STRIP (bookings tab) ─────────────────────────── */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .toolbar h2{margin-bottom:0;}
+  .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px;}
+  .stat{background:var(--surface);border-radius:12px;padding:14px 16px;}
+  .stat-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .stat-value{font-size:20px;font-weight:600;color:var(--text);line-height:1.1;}
+  .stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+  .month-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;}
+
+  /* ── AVAILABILITY TAB ───────────────────────────────────── */
+  .day-row{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border);}
+  .day-row:last-child{border-bottom:none;}
+  .day-name{width:110px;display:flex;align-items:center;gap:10px;padding-top:7px;font-size:12.5px;font-weight:600;color:var(--text);}
+  .day-name input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .day-row.off .day-windows{opacity:.35;pointer-events:none;}
+  .day-windows{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .window-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .window-row input[type="time"]{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;}
+  .window-row input[type="time"]:focus{border-color:var(--accent);}
+  .window-row .sep{color:var(--muted);font-size:11px;}
+  .link-btn{background:none;border:none;color:var(--accent);font-size:11px;font-family:var(--sans);cursor:pointer;padding:4px 2px;}
+  .link-btn.danger{color:var(--red);}
+  .link-btn:hover{text-decoration:underline;}
+  .panel-actions{display:flex;align-items:center;gap:12px;margin-top:18px;}
+  .hint{font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:16px;}
+
+  /* ── MODAL: book-for-client fields ──────────────────────── */
+  .modal-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .modal-fields .filter-field.full{grid-column:1/-1;}
+  .modal-fields .filter-field input, .modal-fields .filter-field select{min-width:0;width:100%;}
+  .radio-row{display:flex;gap:14px;font-size:12px;color:var(--text);padding-top:4px;flex-wrap:wrap;}
+  .radio-row label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .radio-row input{accent-color:var(--accent);}
+
   .toast{position:fixed;bottom:24px;right:24px;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:13px 18px;font-size:12px;color:var(--text);z-index:100;display:none;max-width:320px;box-shadow:var(--menu-shadow);}
   .toast.show{display:block;}
   .toast.success{border-color:var(--accent-dim);color:var(--accent);}
   .toast.error{border-color:var(--red-dim);color:var(--red);}
 
+  /* Bookings table → stacked cards on narrow screens. Each td carries a
+     data-label so the header text is still shown, and the ••• button sits
+     in the card's top-right corner. */
+  @media (max-width:760px){
+    #bookingsTable, #bookingsTable tbody, #bookingsTable tr, #bookingsTable td{display:block;}
+    #bookingsTable thead{display:none;}
+    #bookingsTable tr{position:relative;padding:14px 16px;border-bottom:1px solid var(--border);}
+    #bookingsTable tr:last-child{border-bottom:none;}
+    #bookingsTable td{padding:4px 0;border:none;}
+    #bookingsTable td[data-label]::before{content:attr(data-label);display:block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+    #bookingsTable td.col-actions{position:absolute;top:10px;right:10px;width:auto;box-shadow:none;background:none;padding:0;}
+    #bookingsTable .empty-row td{padding:30px 0;}
+    .modal-fields{grid-template-columns:1fr;}
+    .day-row{flex-direction:column;gap:10px;}
+    .day-name{width:auto;padding-top:0;}
+  }
   @media (max-width:680px){
     .dash{padding:20px 14px 50px;}
     .dash-header{flex-direction:column;align-items:flex-start;gap:14px;}
@@ -258,7 +320,7 @@
       <div class="avatar"><img src="../assets/profile.jpg" alt="Sarath G" style="width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:center;" onerror="this.outerHTML='SG'"></div>
       <div>
         <h1>Meet with Sarath — Admin</h1>
-        <span>Bookings, event types, and coupons</span>
+        <span>Bookings, availability, event types, and coupons</span>
       </div>
     </div>
     <button class="logout-btn" onclick="logout()">Log out</button>
@@ -266,6 +328,7 @@
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="bookings" onclick="switchTab('bookings')">Bookings</button>
+    <button class="tab-btn" data-tab="availability" onclick="switchTab('availability')">Availability</button>
     <button class="tab-btn" data-tab="eventtypes" onclick="switchTab('eventtypes')">Event Types</button>
     <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')">Coupons</button>
   </div>
@@ -273,7 +336,23 @@
   <!-- BOOKINGS TAB -->
   <div class="tab-panel active" id="tab-bookings">
     <div class="panel">
-      <h2>Bookings</h2>
+      <div class="toolbar">
+        <h2>Overview</h2>
+        <input type="month" class="month-input" id="statsMonth" onchange="loadStats()">
+      </div>
+      <div class="stats" id="statsStrip">
+        <div class="stat"><div class="stat-label">Bookings</div><div class="stat-value">—</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <h2>Bookings</h2>
+        <div class="toolbar-actions">
+          <button class="btn btn-outline btn-sm" onclick="exportBookingsCsv()">Export CSV</button>
+          <button class="btn btn-sm" onclick="openCreateModal()">+ Book for a client</button>
+        </div>
+      </div>
       <div class="filter-bar">
         <div class="filter-field">
           <label>From</label>
@@ -295,21 +374,21 @@
             <option value="cancelled">Cancelled</option>
             <option value="rescheduled">Rescheduled</option>
             <option value="no-show">No-show</option>
+            <option value="completed">Completed</option>
           </select>
         </div>
         <button class="btn" onclick="loadBookings()">Filter</button>
         <button class="btn btn-outline" onclick="clearBookingFilters()">Clear</button>
       </div>
       <div class="table-wrap">
-        <table>
+        <table id="bookingsTable">
           <thead>
             <tr>
-              <th>Created</th><th>Client</th><th>Type</th><th>Date</th><th>Time</th>
-              <th>Duration</th><th>Paid</th><th>Coupon</th><th>Status</th><th></th>
+              <th>Client</th><th>Session</th><th>When</th><th>Payment</th><th>Status</th><th class="col-actions"></th>
             </tr>
           </thead>
           <tbody id="bookingsBody">
-            <tr class="empty-row"><td colspan="10">Loading…</td></tr>
+            <tr class="empty-row"><td colspan="6">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -328,6 +407,70 @@
     </div>
   </div>
 
+  <!-- AVAILABILITY TAB -->
+  <div class="tab-panel" id="tab-availability">
+    <div class="panel">
+      <h2>Weekly hours</h2>
+      <div class="hint">Times are IST. Untick a day to take it off entirely; add a second range to leave a gap (e.g. 09:00–12:00 and 14:00–19:00 keeps lunch free). Changes go live within a minute.</div>
+      <div id="weekGrid"><div class="hint">Loading…</div></div>
+      <div class="panel-actions">
+        <button class="btn" id="saveWeeklyBtn" onclick="saveWeekly()">Save weekly hours</button>
+        <div class="form-status" id="weeklyStatus" style="margin-top:0;"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Date overrides</h2>
+      <div class="hint">Block a specific date (holiday, travel) or give it custom hours. A date override always wins over the weekly hours for that day. Past overrides are hidden automatically.</div>
+      <div class="table-wrap">
+        <table id="overridesTable">
+          <thead><tr><th>Date</th><th>Hours</th><th>Note</th><th class="col-actions"></th></tr></thead>
+          <tbody id="overridesBody"><tr class="empty-row"><td colspan="4">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="inline-form" id="overrideForm">
+        <div class="filter-field">
+          <label>Date</label>
+          <input type="date" id="ovDate">
+        </div>
+        <div class="filter-field">
+          <label>Mode</label>
+          <select id="ovMode" onchange="onOverrideModeChange()">
+            <option value="blocked">Block whole day</option>
+            <option value="custom">Custom hours</option>
+          </select>
+        </div>
+        <div class="filter-field" id="ovWindowsField" style="display:none;">
+          <label>Hours (HH:MM-HH:MM, comma-separated)</label>
+          <input type="text" id="ovWindows" placeholder="10:00-13:00, 15:00-18:00" style="min-width:230px;">
+        </div>
+        <div class="filter-field">
+          <label>Note (optional)</label>
+          <input type="text" id="ovNote" placeholder="e.g. Diwali">
+        </div>
+        <button class="btn" onclick="saveOverride()">Save override</button>
+      </div>
+      <div class="form-status" id="overrideStatus"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Booking rules</h2>
+      <div class="hint">Minimum notice hides any slot starting sooner than this from now (your own bookings from this dashboard ignore it). Buffer is the gap kept before and after every calendar event.</div>
+      <div class="inline-form" style="margin-top:0;padding-top:0;border-top:none;">
+        <div class="filter-field">
+          <label>Minimum notice (hours)</label>
+          <input type="number" id="setMinNotice" min="0" step="1">
+        </div>
+        <div class="filter-field">
+          <label>Buffer (minutes)</label>
+          <input type="number" id="setBuffer" min="0" step="5">
+        </div>
+        <button class="btn" onclick="saveSettings()">Save rules</button>
+      </div>
+      <div class="form-status" id="settingsStatus"></div>
+    </div>
+  </div>
+
   <!-- EVENT TYPES TAB -->
   <div class="tab-panel" id="tab-eventtypes">
     <div class="panel">
@@ -335,7 +478,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>ID</th><th>Label</th><th>Duration (min)</th><th>Price (₹)</th><th>Active</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Label</th><th>Duration (min)</th><th>Price (₹)</th><th>Active</th><th class="col-actions">Actions</th></tr>
           </thead>
           <tbody id="eventTypesBody">
             <tr class="empty-row"><td colspan="6">Loading…</td></tr>
@@ -377,7 +520,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Code</th><th>Discount</th><th>Usage</th><th>Used / Limit</th><th>Active</th><th>Expiry</th><th>Actions</th></tr>
+            <tr><th>Code</th><th>Discount</th><th>Usage</th><th>Used / Limit</th><th>Active</th><th>Expiry</th><th class="col-actions">Actions</th></tr>
           </thead>
           <tbody id="couponsBody">
             <tr class="empty-row"><td colspan="7">Loading…</td></tr>
@@ -424,12 +567,21 @@
   </div>
 </div>
 
-<!-- RESCHEDULE MODAL -->
+<!-- SCHEDULE MODAL — shared by "Reschedule" (row action) and "Book for a
+     client" (toolbar). Same calendar + slot picker; the create mode adds
+     the type selector above and the client fields below. -->
 <div class="modal-overlay" id="rescheduleModal">
   <div class="modal-card">
     <button class="modal-close" onclick="closeRescheduleModal()">&times;</button>
-    <h3>Reschedule booking</h3>
+    <h3 id="modalTitle">Reschedule booking</h3>
     <div class="modal-sub" id="rescheduleModalSub"></div>
+
+    <div class="modal-fields" id="createTypeFields" style="display:none;">
+      <div class="filter-field full">
+        <label>Session type</label>
+        <select id="createType" onchange="onCreateTypeChange()"></select>
+      </div>
+    </div>
 
     <div class="cal-nav">
       <button class="nav-btn" id="modalPrevBtn" onclick="modalChangeMonth(-1)" aria-label="Previous month">
@@ -446,7 +598,22 @@
     </div>
     <div class="cal-grid" id="modalCalGrid"></div>
     <div class="slots" id="modalSlotGrid"><div class="slot empty">Select a date first</div></div>
-    <button class="btn" id="modalConfirmBtn" disabled onclick="confirmModalReschedule()" style="width:100%;">Confirm new time</button>
+
+    <div class="modal-fields" id="createClientFields" style="display:none;">
+      <div class="filter-field"><label>First name</label><input type="text" id="createFname" autocomplete="off"></div>
+      <div class="filter-field"><label>Last name</label><input type="text" id="createLname" autocomplete="off"></div>
+      <div class="filter-field full"><label>Email</label><input type="email" id="createEmail" autocomplete="off"></div>
+      <div class="filter-field full"><label>Topic (optional)</label><input type="text" id="createTopic" autocomplete="off"></div>
+      <div class="filter-field full" id="createPaymentField">
+        <label>Payment</label>
+        <div class="radio-row">
+          <label><input type="radio" name="createPayment" value="offline" checked> Paid offline (record at full price)</label>
+          <label><input type="radio" name="createPayment" value="waived"> Waived (free)</label>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" id="modalConfirmBtn" disabled onclick="confirmModal()" style="width:100%;">Confirm new time</button>
     <div class="form-status error" id="modalErr"></div>
   </div>
 </div>
@@ -565,9 +732,14 @@
   function enterDashboard() {
     document.getElementById('authPage').style.display = 'none';
     document.getElementById('dash').classList.add('show');
+    const monthInput = document.getElementById('statsMonth');
+    if (!monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
     loadEventTypesTab();
     loadCoupons();
     loadBookings();
+    loadStats();
+    loadClosedDays();
+    loadAvailabilityTab();
   }
 
   // ============================================================
@@ -699,7 +871,7 @@
   async function loadBookings() {
     const reqId = ++bookingsReqId;
     const body = document.getElementById('bookingsBody');
-    body.innerHTML = '<tr class="empty-row"><td colspan="10">Loading…</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="6">Loading…</td></tr>';
     document.getElementById('bookingsPagination').style.display = 'none';
 
     const filters = {
@@ -712,7 +884,7 @@
     try {
       const data = await adminFetch('admin-list-bookings', filters);
       if (reqId !== bookingsReqId) return; // a newer request has since started — discard this stale response
-      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="10">${esc(data.error)}</td></tr>`; return; }
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="6">${esc(data.error)}</td></tr>`; return; }
 
       bookingsData = data.bookings || [];
       bookingsPage = 0;
@@ -720,7 +892,7 @@
     } catch (err) {
       // Unauthorized already handled by adminFetch; a genuine fetch failure
       // still deserves a visible state rather than staying on "Loading…"
-      if (reqId === bookingsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="10">Could not load bookings. Please try again.</td></tr>';
+      if (reqId === bookingsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load bookings. Please try again.</td></tr>';
     }
   }
 
@@ -729,7 +901,7 @@
     const pagination = document.getElementById('bookingsPagination');
 
     if (!bookingsData.length) {
-      body.innerHTML = '<tr class="empty-row"><td colspan="10">No bookings match these filters.</td></tr>';
+      body.innerHTML = '<tr class="empty-row"><td colspan="6">No bookings match these filters.</td></tr>';
       pagination.style.display = 'none';
       return;
     }
@@ -743,20 +915,35 @@
       const statusClass = 'badge-' + (b.status || 'confirmed');
       const eventIdAttr = esc(b.eventId);
       const paid = b.pricePaidPaise > 0 ? formatRupees(b.pricePaidPaise) : (b.pricePaidPaise === 0 ? 'Free' : '—');
+      const typeLabel = (currentEventTypes.find(t => t.id === b.type) || {}).label || b.type;
       return `<tr>
-        <td class="cell-muted">${formatCreatedAt(b.createdAt)}</td>
-        <td>
-          <div class="cell-primary">${esc(b.name)}</div>
-          <div class="cell-secondary">${esc(b.email)}</div>
+        <td data-label="Client">
+          <div class="cell-stack">
+            <span class="cell-primary">${esc(b.name)}</span>
+            <span class="cell-secondary">${esc(b.email)}</span>
+            <span class="cell-tertiary">booked ${formatCreatedAt(b.createdAt)}${b.source === 'admin' ? ' · by you' : ''}</span>
+          </div>
         </td>
-        <td class="cell-muted">${esc(b.type)}</td>
-        <td>${formatBookingDate(b.date)}</td>
-        <td class="cell-muted">${formatBookingTime(b.time)}</td>
-        <td class="cell-muted">${esc(b.durationMins)} min</td>
-        <td>${paid}</td>
-        <td class="cell-muted">${esc(b.couponCode) || '—'}</td>
-        <td><span class="badge ${statusClass}">${esc(b.status)}</span></td>
-        <td>
+        <td data-label="Session">
+          <div class="cell-stack">
+            <span>${esc(typeLabel)}</span>
+            <span class="cell-secondary">${esc(b.durationMins)} min</span>
+          </div>
+        </td>
+        <td data-label="When">
+          <div class="cell-stack">
+            <span>${formatBookingDate(b.date)}</span>
+            <span class="cell-secondary">${formatBookingTime(b.time)}</span>
+          </div>
+        </td>
+        <td data-label="Payment">
+          <div class="cell-stack">
+            <span>${paid}</span>
+            ${b.couponCode ? `<span class="cell-secondary">coupon ${esc(b.couponCode)}</span>` : ''}
+          </div>
+        </td>
+        <td data-label="Status"><span class="badge ${statusClass}">${esc(b.status)}</span></td>
+        <td class="col-actions">
           <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" data-status="${esc(b.status)}" data-past="${bookingIsPast(b) ? 1 : 0}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
         </td>
       </tr>`;
@@ -808,9 +995,11 @@
     // "Mark no-show" only makes sense for a booking that was live and has
     // already started — the backend enforces both, this just hides the
     // option where it would only ever produce an error toast.
-    const canMarkNoShow = isPast && (status === 'confirmed' || status === 'rescheduled');
+    const canMarkNoShow = isPast && (status === 'confirmed' || status === 'rescheduled' || status === 'completed');
+    const canMarkAttended = isPast && (status === 'confirmed' || status === 'rescheduled' || status === 'no-show');
 
     menu.innerHTML = `
+      ${canMarkAttended ? '<button data-action="attended">Mark attended</button>' : ''}
       <button data-action="reschedule">Reschedule</button>
       <button data-action="resend-confirm">Resend confirmation</button>
       <button data-action="resend-reminder">Resend reminder</button>
@@ -819,6 +1008,7 @@
       <button class="danger" data-action="cancel">Cancel booking</button>
     `;
     menu.querySelector('[data-action="reschedule"]').onclick = () => { closeRowMenu(); openRescheduleModal(eventId, eventType, name); };
+    if (canMarkAttended) menu.querySelector('[data-action="attended"]').onclick = () => { closeRowMenu(); adminMarkAttended(eventId); };
     if (canMarkNoShow) menu.querySelector('[data-action="no-show"]').onclick = () => { closeRowMenu(); adminMarkNoShow(eventId, name); };
     menu.querySelector('[data-action="resend-confirm"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'confirmation'); };
     menu.querySelector('[data-action="resend-reminder"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'reminder'); };
@@ -879,6 +1069,65 @@
     } catch (err) {}
   }
 
+  async function adminMarkAttended(eventId) {
+    try {
+      const data = await adminFetch('admin-mark-attended', { eventId });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast('Marked as attended.', 'success');
+      await loadBookings();
+      loadStats();
+    } catch (err) {}
+  }
+
+  // ── CSV export ─────────────────────────────────────────────
+  // Exports whatever the current filters returned (all pages), every
+  // column the sheet has, built entirely client-side.
+  const CSV_COLUMNS = ['eventId', 'type', 'name', 'email', 'date', 'time', 'durationMins', 'pricePaidPaise', 'couponCode', 'status', 'createdAt', 'topic', 'clientTimezone', 'noShowMarkedAt', 'noShowNudgesSent', 'source'];
+  function exportBookingsCsv() {
+    if (!bookingsData.length) { showToast('Nothing to export — no bookings match the current filters.', 'error'); return; }
+    const cell = v => {
+      const str = v == null ? '' : String(v);
+      return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+    };
+    const lines = [CSV_COLUMNS.join(',')].concat(bookingsData.map(b => CSV_COLUMNS.map(c => cell(b[c])).join(',')));
+    const from = document.getElementById('filterDateFrom').value || 'all';
+    const to = document.getElementById('filterDateTo').value || 'all';
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bookings-${from}-${to}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ── Overview stats ─────────────────────────────────────────
+  let statsReqId = 0;
+  async function loadStats() {
+    const reqId = ++statsReqId;
+    const month = document.getElementById('statsMonth').value;
+    try {
+      const data = await adminFetch('admin-stats', { month });
+      if (reqId !== statsReqId || data.error) return;
+      renderStats(data.stats);
+    } catch (err) {}
+  }
+
+  function renderStats(st) {
+    const strip = document.getElementById('statsStrip');
+    const monthLabel = new Date(st.month + '-01T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+    const rate = st.noShowRate == null ? '—' : st.noShowRate + '%';
+    const decided = st.completed + st.noShows;
+    strip.innerHTML = `
+      <div class="stat"><div class="stat-label">Bookings</div><div class="stat-value">${st.bookings}</div><div class="stat-sub">${esc(monthLabel)}</div></div>
+      <div class="stat"><div class="stat-label">Revenue</div><div class="stat-value">${st.revenuePaise > 0 ? formatRupees(st.revenuePaise) : '₹0'}</div><div class="stat-sub">recorded payments</div></div>
+      <div class="stat"><div class="stat-label">No-show rate</div><div class="stat-value">${rate}</div><div class="stat-sub">${st.noShows} of ${decided} marked</div></div>
+      <div class="stat"><div class="stat-label">Most booked</div><div class="stat-value" style="font-size:15px;">${st.topType ? esc(st.topType.label) : '—'}</div><div class="stat-sub">${st.topType ? st.topType.count + ' this month' : 'no bookings yet'}</div></div>
+      <div class="stat"><div class="stat-label">Upcoming</div><div class="stat-value">${st.upcoming}</div><div class="stat-sub">confirmed, any month</div></div>
+    `;
+  }
+
   async function adminResend(eventId, kind) {
     try {
       const data = await adminFetch('admin-resend-reminder', { eventId, kind });
@@ -889,23 +1138,82 @@
 
   // ── Reschedule modal ──────────────────────────────────────
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let modalEventId = null, modalEventType = null;
+  let modalEventId = null, modalEventType = null, modalMode = 'reschedule';
   let modalToday = new Date(), modalYear = modalToday.getFullYear(), modalMonth = modalToday.getMonth();
   let modalSelDate = null, modalSelTime = null;
 
-  function openRescheduleModal(eventId, eventType, name) {
-    modalEventId = eventId;
-    modalEventType = eventType;
+  // Days that can never have slots (weekday off / date blocked) — fetched
+  // once on dashboard entry from the public availability summary and
+  // re-fetched after any availability save, so the modal calendar greys
+  // them out the same way the public booking page does.
+  let closedDays = { offWeekdays: [], blockedDates: [] };
+  async function loadClosedDays() {
+    try {
+      const res = await fetch(`${CONFIG.API_URL}?action=availability`);
+      const data = await res.json();
+      if (data.offWeekdays) closedDays = data;
+    } catch (err) {}
+  }
+  function isClosedDay(dt, iso) {
+    return closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(iso) !== -1;
+  }
+
+  function resetModalPicker() {
     modalSelDate = null;
     modalSelTime = null;
     modalYear = modalToday.getFullYear();
     modalMonth = modalToday.getMonth();
-    document.getElementById('rescheduleModalSub').textContent = `${name} — currently booked as ${eventType}`;
     document.getElementById('modalSlotGrid').innerHTML = '<div class="slot empty">Select a date first</div>';
     document.getElementById('modalConfirmBtn').disabled = true;
     document.getElementById('modalErr').textContent = '';
     renderModalCal();
+  }
+
+  function openRescheduleModal(eventId, eventType, name) {
+    modalMode = 'reschedule';
+    modalEventId = eventId;
+    modalEventType = eventType;
+    document.getElementById('modalTitle').textContent = 'Reschedule booking';
+    document.getElementById('rescheduleModalSub').textContent = `${name} — currently booked as ${eventType}`;
+    document.getElementById('createTypeFields').style.display = 'none';
+    document.getElementById('createClientFields').style.display = 'none';
+    document.getElementById('modalConfirmBtn').textContent = 'Confirm new time';
+    resetModalPicker();
     document.getElementById('rescheduleModal').classList.add('show');
+  }
+
+  // "Book for a client" — same picker, plus a type selector and the
+  // client's details. Slots come back without the minimum-notice filter
+  // (the admin token is sent on the GET), so you can book later today.
+  function openCreateModal() {
+    modalMode = 'create';
+    modalEventId = null;
+    const sel = document.getElementById('createType');
+    sel.innerHTML = currentEventTypes.map(t => `<option value="${esc(t.id)}">${esc(t.label)} · ${t.durationMins} min · ${formatRupees(t.pricePaise)}</option>`).join('');
+    if (!currentEventTypes.length) { showToast('Event types are still loading — try again in a moment.', 'error'); return; }
+    modalEventType = sel.value;
+    document.getElementById('modalTitle').textContent = 'Book for a client';
+    document.getElementById('rescheduleModalSub').textContent = 'Creates the calendar event, sends the normal confirmation email, and logs the booking. No payment link is sent.';
+    document.getElementById('createTypeFields').style.display = '';
+    document.getElementById('createClientFields').style.display = '';
+    ['createFname', 'createLname', 'createEmail', 'createTopic'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('modalConfirmBtn').textContent = 'Book session';
+    onCreateTypeChange(true);
+    resetModalPicker();
+    document.getElementById('rescheduleModal').classList.add('show');
+  }
+
+  function onCreateTypeChange(skipReset) {
+    modalEventType = document.getElementById('createType').value;
+    const type = currentEventTypes.find(t => t.id === modalEventType) || {};
+    document.getElementById('createPaymentField').style.display = Number(type.pricePaise) > 0 ? '' : 'none';
+    if (!skipReset) resetModalPicker();
+  }
+
+  function createFormValid() {
+    const fname = document.getElementById('createFname').value.trim();
+    const email = document.getElementById('createEmail').value.trim();
+    return !!fname && email.indexOf('@') !== -1;
   }
 
   function closeRescheduleModal() {
@@ -936,9 +1244,10 @@
       cell.className = 'cal-cell';
       cell.textContent = i;
       const iso = modalDateKey(dt);
-      if (isPast) {
+      if (isPast || isClosedDay(dt, iso)) {
         cell.style.opacity = '.3';
         cell.style.pointerEvents = 'none';
+        if (!isPast) cell.title = 'Closed';
       } else {
         cell.onclick = () => modalSelectDate(iso, cell);
       }
@@ -967,7 +1276,7 @@
   function modalFetchSlots(iso) {
     const slotGrid = document.getElementById('modalSlotGrid');
     slotGrid.innerHTML = '<div class="slot empty">Loading…</div>';
-    fetch(`${CONFIG.API_URL}?date=${encodeURIComponent(iso)}&eventType=${encodeURIComponent(modalEventType)}`)
+    fetch(`${CONFIG.API_URL}?date=${encodeURIComponent(iso)}&eventType=${encodeURIComponent(modalEventType)}&adminToken=${encodeURIComponent(getToken() || '')}`)
       .then(r => r.json())
       .then(data => {
         slotGrid.innerHTML = '';
@@ -991,27 +1300,204 @@
       .catch(() => { slotGrid.innerHTML = '<div class="slot empty">Could not load availability.</div>'; });
   }
 
-  async function confirmModalReschedule() {
+  async function confirmModal() {
     const btn = document.getElementById('modalConfirmBtn');
     const err = document.getElementById('modalErr');
+    const isCreate = modalMode === 'create';
+    const idleLabel = isCreate ? 'Book session' : 'Confirm new time';
     err.textContent = '';
+
+    let payload;
+    if (isCreate) {
+      if (!createFormValid()) { err.textContent = 'First name and a valid email are required.'; return; }
+      const payment = (document.querySelector('input[name="createPayment"]:checked') || {}).value || 'offline';
+      payload = {
+        eventType: modalEventType, date: modalSelDate, time: modalSelTime,
+        name: (document.getElementById('createFname').value.trim() + ' ' + document.getElementById('createLname').value.trim()).trim(),
+        email: document.getElementById('createEmail').value.trim(),
+        topic: document.getElementById('createTopic').value.trim(),
+        payment
+      };
+    } else {
+      payload = { eventId: modalEventId, newDate: modalSelDate, newTime: modalSelTime };
+    }
+
     btn.disabled = true;
-    btn.textContent = 'Rescheduling…';
+    btn.textContent = isCreate ? 'Booking…' : 'Rescheduling…';
     try {
-      const data = await adminFetch('admin-reschedule', { eventId: modalEventId, newDate: modalSelDate, newTime: modalSelTime });
+      const data = await adminFetch(isCreate ? 'admin-create-booking' : 'admin-reschedule', payload);
       if (data.error) {
         err.textContent = data.error;
         btn.disabled = false;
-        btn.textContent = 'Confirm new time';
+        btn.textContent = idleLabel;
+        if (data.code === 'SLOT_TAKEN' && modalSelDate) modalFetchSlots(modalSelDate);
         return;
       }
       closeRescheduleModal();
-      showToast('Booking rescheduled.', 'success');
+      showToast(isCreate ? 'Booked — confirmation email sent.' : 'Booking rescheduled.', 'success');
       await loadBookings();
+      loadStats();
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = 'Confirm new time';
+      btn.textContent = idleLabel;
     }
+  }
+
+  // ============================================================
+  // AVAILABILITY TAB
+  // ============================================================
+  const WEEKDAYS = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
+
+  async function loadAvailabilityTab() {
+    try {
+      const [avail, settings] = await Promise.all([adminFetch('admin-get-availability'), adminFetch('admin-get-settings')]);
+      if (!avail.error) { renderWeekGrid(avail.weekly); renderOverrides(avail.overrides); }
+      if (!settings.error && settings.settings) {
+        document.getElementById('setMinNotice').value = settings.settings.minNoticeHours;
+        document.getElementById('setBuffer').value = settings.settings.bufferMins;
+      }
+    } catch (err) {}
+  }
+
+  // "09:00-12:00, 14:00-19:00" → [['09:00','12:00'], ['14:00','19:00']]
+  function splitWindows(str) {
+    return String(str || '').split(',').map(w => w.trim()).filter(Boolean).map(w => w.split('-').map(x => x.trim()));
+  }
+
+  function renderWeekGrid(weekly) {
+    const grid = document.getElementById('weekGrid');
+    grid.innerHTML = WEEKDAYS.map(([key, label]) => {
+      const d = weekly[key] || { enabled: false, windows: '' };
+      const windows = splitWindows(d.windows);
+      if (!windows.length) windows.push(['09:00', '20:00']);
+      return `<div class="day-row${d.enabled ? '' : ' off'}" data-day="${key}">
+        <label class="day-name"><input type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleDay(this)"> ${label}</label>
+        <div class="day-windows">
+          ${windows.map(([a, b]) => windowRowHtml(a, b)).join('')}
+          <div><button class="link-btn" onclick="addWindowRow(this)">+ Add another range</button></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function windowRowHtml(a, b) {
+    return `<div class="window-row">
+      <input type="time" step="900" value="${esc(a)}"> <span class="sep">to</span> <input type="time" step="900" value="${esc(b)}">
+      <button class="link-btn danger" onclick="removeWindowRow(this)">Remove</button>
+    </div>`;
+  }
+
+  function toggleDay(cb) {
+    cb.closest('.day-row').classList.toggle('off', !cb.checked);
+  }
+
+  function addWindowRow(btn) {
+    const container = btn.closest('.day-windows');
+    const rows = container.querySelectorAll('.window-row');
+    const last = rows[rows.length - 1];
+    const start = last ? last.querySelectorAll('input')[1].value : '09:00';
+    btn.parentElement.insertAdjacentHTML('beforebegin', windowRowHtml(start, ''));
+  }
+
+  function removeWindowRow(btn) {
+    const container = btn.closest('.day-windows');
+    if (container.querySelectorAll('.window-row').length <= 1) { showToast('Keep at least one range, or untick the day to turn it off.', 'error'); return; }
+    btn.closest('.window-row').remove();
+  }
+
+  function readWeekGrid() {
+    const weekly = {};
+    document.querySelectorAll('#weekGrid .day-row').forEach(row => {
+      const enabled = row.querySelector('.day-name input').checked;
+      const windows = Array.from(row.querySelectorAll('.window-row')).map(w => {
+        const [a, b] = Array.from(w.querySelectorAll('input')).map(i => i.value);
+        return a && b ? `${a}-${b}` : '';
+      }).filter(Boolean).join(', ');
+      weekly[row.dataset.day] = { enabled, windows };
+    });
+    return weekly;
+  }
+
+  async function saveWeekly() {
+    const btn = document.getElementById('saveWeeklyBtn');
+    const status = document.getElementById('weeklyStatus');
+    status.textContent = ''; status.className = 'form-status';
+    btn.disabled = true;
+    try {
+      const data = await adminFetch('admin-save-weekly', { weekly: readWeekGrid() });
+      if (data.error) { status.textContent = data.error; status.className = 'form-status error'; }
+      else { status.textContent = 'Saved — live within a minute.'; status.className = 'form-status success'; loadClosedDays(); }
+    } catch (err) {}
+    btn.disabled = false;
+  }
+
+  function renderOverrides(overrides) {
+    const body = document.getElementById('overridesBody');
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = (overrides || []).filter(o => o.date >= today);
+    if (!upcoming.length) { body.innerHTML = '<tr class="empty-row"><td colspan="4">No upcoming overrides.</td></tr>'; return; }
+    body.innerHTML = upcoming.map(o => `<tr>
+      <td>${formatBookingDate(o.date)}</td>
+      <td>${o.enabled ? esc(o.windows) : '<span class="badge badge-cancelled">Blocked</span>'}</td>
+      <td class="cell-muted">${esc(o.note) || '—'}</td>
+      <td class="col-actions"><div class="row-actions" style="justify-content:flex-end;"><button onclick="editOverride('${esc(o.date)}', ${o.enabled}, '${esc(o.windows)}', '${esc(o.note).replace(/'/g, "\\'")}')">Edit</button><button class="danger" onclick="deleteOverride('${esc(o.date)}')">Remove</button></div></td>
+    </tr>`).join('');
+  }
+
+  function onOverrideModeChange() {
+    document.getElementById('ovWindowsField').style.display = document.getElementById('ovMode').value === 'custom' ? '' : 'none';
+  }
+
+  function editOverride(date, enabled, windows, note) {
+    document.getElementById('ovDate').value = date;
+    document.getElementById('ovMode').value = enabled ? 'custom' : 'blocked';
+    document.getElementById('ovWindows').value = windows || '';
+    document.getElementById('ovNote').value = note || '';
+    onOverrideModeChange();
+    document.getElementById('overrideForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function saveOverride() {
+    const status = document.getElementById('overrideStatus');
+    status.textContent = ''; status.className = 'form-status';
+    const date = document.getElementById('ovDate').value;
+    const enabled = document.getElementById('ovMode').value === 'custom';
+    const windows = document.getElementById('ovWindows').value.trim();
+    const note = document.getElementById('ovNote').value.trim();
+    if (!date) { status.textContent = 'Pick a date.'; status.className = 'form-status error'; return; }
+    try {
+      const data = await adminFetch('admin-upsert-date-override', { date, enabled, windows, note });
+      if (data.error) { status.textContent = data.error; status.className = 'form-status error'; return; }
+      status.textContent = 'Saved.'; status.className = 'form-status success';
+      ['ovDate', 'ovWindows', 'ovNote'].forEach(id => { document.getElementById(id).value = ''; });
+      loadAvailabilityTab();
+      loadClosedDays();
+    } catch (err) {}
+  }
+
+  async function deleteOverride(date) {
+    if (!confirm(`Remove the override for ${date}? The weekly hours will apply again.`)) return;
+    try {
+      const data = await adminFetch('admin-delete-date-override', { date });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast('Override removed.', 'success');
+      loadAvailabilityTab();
+      loadClosedDays();
+    } catch (err) {}
+  }
+
+  async function saveSettings() {
+    const status = document.getElementById('settingsStatus');
+    status.textContent = ''; status.className = 'form-status';
+    const settings = {
+      minNoticeHours: document.getElementById('setMinNotice').value,
+      bufferMins: document.getElementById('setBuffer').value
+    };
+    try {
+      const data = await adminFetch('admin-save-settings', { settings });
+      if (data.error) { status.textContent = data.error; status.className = 'form-status error'; return; }
+      status.textContent = 'Saved — live within a minute.'; status.className = 'form-status success';
+    } catch (err) {}
   }
 
   // ============================================================
@@ -1041,7 +1527,7 @@
           <td><input type="number" data-field="durationMins" value="${esc(t.durationMins)}" min="5" step="5"></td>
           <td><input type="number" data-field="pricePaise" value="${Math.round((Number(t.pricePaise) || 0) / 100)}" min="0" step="1"></td>
           <td class="checkbox-cell"><input type="checkbox" data-field="active" ${t.active === true || t.active === 'TRUE' ? 'checked' : ''}></td>
-          <td><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
+          <td class="col-actions" style="width:auto;"><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
         </tr>
         <tr class="et-desc-row" data-idx="${i}">
           <td colspan="6">
@@ -1160,8 +1646,8 @@
           <td>${esc(c.usedCount || 0)} / ${limit}</td>
           <td><span class="badge ${activeClass}">${activeLabel}</span></td>
           <td>${expiry}</td>
-          <td>
-            <div class="row-actions">
+          <td class="col-actions" style="width:auto;">
+            <div class="row-actions" style="justify-content:flex-end;">
               <button onclick='editCoupon(${JSON.stringify(c).replace(/'/g, "&#39;")})'>Edit</button>
               <button class="danger" onclick="deactivateCoupon('${esc(c.code)}')">Deactivate</button>
             </div>

@@ -32,12 +32,13 @@ dashboard for current pricing.
   that has no reason to be public. Keep your own copy of it locally (outside
   this repo) and deploy it from there — see [SETUP.md](SETUP.md).
 - **Data store** — a Google Sheet (see [SETUP.md](SETUP.md) for the ID and
-  one-time setup). Three tabs: `Bookings` (a log of every booking, updated on
-  cancel/reschedule/no-show), `EventTypes` (the live session-type catalogue — what
-  the booking page and backend both read), and `Coupons`. This is the actual
-  source of truth for pricing now, not `Code.gs`'s source code — admin
-  dashboard changes take effect within about a minute (short cache TTL on the
-  hot path), no redeploy.
+  one-time setup). Five tabs: `Bookings` (a log of every booking, updated on
+  cancel/reschedule/no-show/attended), `EventTypes` (the live session-type
+  catalogue — what the booking page and backend both read), `Coupons`,
+  `Availability` (weekly hours + date overrides) and `Settings` (minimum
+  notice, buffer). This is the actual source of truth for pricing and hours
+  now, not `Code.gs`'s source code — admin dashboard changes take effect
+  within about a minute (short cache TTL on the hot path), no redeploy.
 - **Config** — `config.js` (gitignored, holds your real deployment URL and
   Razorpay public key) and `config.example.js` (committed, shows the shape).
   Every HTML page loads `config.js` before its own script and reads
@@ -55,7 +56,12 @@ in sync with your local `Code.gs`:
   fetches this on load instead of hardcoding the catalogue, so a price/label
   change made in the admin dashboard shows up on the booking page without a
   redeploy.
-- `GET ?date=YYYY-MM-DD&eventType={id}` → `{ date, eventType, slots: [...] }`
+- `GET ?action=availability` → `{ offWeekdays: [0..6], blockedDates: ['YYYY-MM-DD'] }`
+  — only the on/off shape (no hours); booking calendars grey those days out.
+- `GET ?date=YYYY-MM-DD&eventType={id}[&adminToken=…]` → `{ date, eventType, slots: [...] }`
+  — with a valid admin token the minimum-notice window is skipped (used by
+  the admin reschedule / book-for-client modals); hours, calendar clashes
+  and the buffer still apply.
 - `POST { action: 'validate-coupon', code, eventType }` → `{ valid, code, discountType, discountValue, originalPrice, discountedPrice }` or `{ valid: false, error }`
   — read-only check, does **not** consume the coupon's usage
 - `POST { action: 'create-order', eventType, couponCode? }` → `{ orderId, amount, currency, keyId }`
@@ -77,6 +83,17 @@ in sync with your local `Code.gs`:
 `admin-mark-no-show` (`eventId` — only for a past `confirmed`/`rescheduled`
 booking; sets status `no-show`, emails the client a "we missed you" note
 with their reschedule link, and starts the automated nudge sequence),
+`admin-mark-attended` (`eventId` — past booking → status `completed`; no
+email), `admin-stats` (`month: 'YYYY-MM'` → bookings, revenue, completed,
+no-shows, no-show rate, most-booked type, upcoming), `admin-create-booking`
+(`eventType`, `date`, `time`, `name`, `email`, `topic?`, `payment:
+'offline'|'waived'` — books on the client's behalf through the same commit
+path as a web booking minus Razorpay; row gets `source = admin`),
+`admin-get-availability`, `admin-save-weekly` (`weekly: { mon..sun: {
+enabled, windows } }`), `admin-upsert-date-override` (`date`, `enabled`,
+`windows`, `note`), `admin-delete-date-override` (`date`),
+`admin-get-settings`, `admin-save-settings` (`settings: { minNoticeHours,
+bufferMins }`),
 `admin-list-event-types`, `admin-upsert-event-type` (`id`, `label`,
 `durationMins`, `pricePaise`, `active` — matches on `id`, so this both edits
 and creates), `admin-list-coupons`, `admin-upsert-coupon` (`code`,
@@ -96,18 +113,38 @@ Apps Script Web Apps don't handle — the request silently fails. `e.postData.co
 on the Apps Script side parses the raw body regardless of content type, so
 this is safe.
 
-## Booking rules — minimum notice and buffers
+## Availability and booking rules — edited in the admin panel
 
-Two guards in `Code.gs` shape which slots the picker offers (and, because
-the booking-time re-check reuses the same `buildSlots()` logic, which
-slots can actually be booked):
+Working hours no longer live in code. The **Availability** tab of the
+dashboard edits two Sheet tabs:
 
-- `MIN_NOTICE_HOURS` (4) — no slot may start sooner than this from "now",
-  so a new booking always lands with at least a few hours' warning. Applies
-  to the public picker, the reschedule page, and the admin reschedule
-  modal alike.
-- `BUFFER_MINS` (10) — padding enforced before and after every existing
-  calendar event.
+- `Availability` — one row per weekday (`mon`..`sun`: on/off + one or more
+  `HH:MM-HH:MM` IST ranges, so a day can have a lunch gap) and one row per
+  date override (`YYYY-MM-DD`: blocked, or custom hours for that date). A
+  date row always wins over its weekday row.
+- `Settings` — `minNoticeHours` (default 4: no slot may start sooner than
+  this from "now") and `bufferMins` (default 10: padding before/after every
+  calendar event).
+
+`buildSlots()` walks the day's ranges in 15-minute steps, requires the whole
+session to fit inside a range, clears the buffered calendar busy blocks, and
+applies the notice window. Because the booking-time re-check reuses the same
+function, what the picker shows is exactly what can be booked. Admin-initiated
+bookings and reschedules skip the notice window only. All three are cached
+60s, so edits go live within a minute — no redeploy.
+
+The constants left in `Code.gs` (`DEFAULT_WINDOWS`, `MIN_NOTICE_HOURS`,
+`BUFFER_MINS`) are seed values used once by `initializeSheet()`.
+
+## Admin dashboard tools
+
+- **Overview** strip on the Bookings tab — bookings, revenue, no-show rate,
+  most-booked type and upcoming count for a chosen month.
+- **Mark attended / Mark no-show** in each past booking's row menu; together
+  they make the no-show rate meaningful.
+- **Book for a client** — for sessions agreed over phone/WhatsApp; records
+  payment as offline (full price) or waived, sends the normal confirmation.
+- **Export CSV** — the currently filtered bookings, every column.
 
 ## No-show follow-up
 

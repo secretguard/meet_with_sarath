@@ -163,9 +163,10 @@
   .wd{text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:3px 0;}
   .days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
   .day{aspect-ratio:1;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:9px;cursor:pointer;color:var(--text);border:1px solid transparent;transition:all .15s;position:relative;}
-  .day:hover:not(.empty):not(.past){border-color:var(--accent);color:var(--accent);}
+  .day:hover:not(.empty):not(.past):not(.closed){border-color:var(--accent);color:var(--accent);}
   .day.selected{background:var(--accent);color:var(--btn-text)!important;border-color:var(--accent);font-weight:600;}
   .day.past{color:var(--border);cursor:default;}
+  .day.closed{color:var(--border);cursor:default;text-decoration:line-through;text-decoration-color:var(--border);}
   .day.today:not(.selected)::after{content:'';position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--muted);}
   .day.empty{cursor:default;}
 
@@ -519,6 +520,24 @@
     return !!CLIENT_TZ && CLIENT_TZ !== 'Asia/Kolkata' && CLIENT_TZ !== 'Asia/Calcutta';
   }
 
+  // ── CLOSED DAYS ─────────────────────────────────────────────
+  // Weekdays that are off and dates that are blocked, from the backend's
+  // public availability summary (no hours exposed). Purely cosmetic: the
+  // calendar greys these out so nobody clicks into "No availability"; the
+  // slot endpoint is still the authority. Failure just leaves every day
+  // clickable, exactly as before.
+  let closedDays = { offWeekdays: [], blockedDates: [] };
+  async function loadClosedDays() {
+    try {
+      const res = await fetch(`${CONFIG.API_URL}?action=availability`);
+      const data = await res.json();
+      if (data.offWeekdays) { closedDays = data; renderCal(); }
+    } catch (e) {}
+  }
+  function isClosedDay(dt) {
+    return closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(dateKey(dt)) !== -1;
+  }
+
   // ── STATE ────────────────────────────────────────────────────
   let selectedType = null;   // event type id
   let today    = new Date();
@@ -696,14 +715,16 @@
       const isPast  = dt < new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const isToday = dt.toDateString() === today.toDateString();
       const isSel   = selDate && dt.toDateString() === selDate.toDateString();
+      const isClosed = !isPast && isClosedDay(dt);
 
       d.className = 'day';
       d.textContent = i;
       if (isPast) d.classList.add('past');
+      if (isClosed) { d.classList.add('closed'); d.title = 'Not available'; }
       if (isToday) d.classList.add('today');
       if (isSel) d.classList.add('selected');
 
-      if (!isPast) d.onclick = () => selectDate(new Date(curYear, curMonth, i));
+      if (!isPast && !isClosed) d.onclick = () => selectDate(new Date(curYear, curMonth, i));
       grid.appendChild(d);
     }
 
@@ -1048,6 +1069,7 @@
 
   // ── INIT ─────────────────────────────────────────────────────
   loadEventTypes();
+  loadClosedDays();
   renderCal();
   renderStepStates();
 </script>

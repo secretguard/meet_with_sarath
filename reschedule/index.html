@@ -228,6 +228,20 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
 
+  // Same closed-day greying as the main booking page — see the comment
+  // there. Cosmetic only; the slot endpoint remains the authority.
+  let closedDays = { offWeekdays: [], blockedDates: [] };
+  async function loadClosedDays() {
+    try {
+      const res = await fetch(`${CONFIG.API_URL}?action=availability`);
+      const data = await res.json();
+      if (data.offWeekdays) { closedDays = data; renderCalendar(); }
+    } catch (e) {}
+  }
+  function isClosedDay(dt, iso) {
+    return closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(iso) !== -1;
+  }
+
   function renderCalendar() {
     document.getElementById('monthLabel').textContent = MONTHS[curMonth] + ' ' + curYear;
     const grid = document.getElementById('calGrid');
@@ -249,9 +263,10 @@
       cell.className = 'cal-cell';
       cell.textContent = i;
       const iso = dateKey(dt);
-      if (isPast) {
+      if (isPast || isClosedDay(dt, iso)) {
         cell.style.opacity = '.3';
         cell.style.pointerEvents = 'none';
+        if (!isPast) cell.title = 'Not available';
       } else {
         cell.onclick = () => selectDate(iso, cell);
       }
@@ -352,6 +367,7 @@
   } else {
     document.getElementById('pickerBox').style.display = 'block';
     renderCalendar();
+    loadClosedDays();
   }
 </script>
 </body>
