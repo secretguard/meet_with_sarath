@@ -33,7 +33,7 @@ dashboard for current pricing.
   this repo) and deploy it from there — see [SETUP.md](SETUP.md).
 - **Data store** — a Google Sheet (see [SETUP.md](SETUP.md) for the ID and
   one-time setup). Three tabs: `Bookings` (a log of every booking, updated on
-  cancel/reschedule), `EventTypes` (the live session-type catalogue — what
+  cancel/reschedule/no-show), `EventTypes` (the live session-type catalogue — what
   the booking page and backend both read), and `Coupons`. This is the actual
   source of truth for pricing now, not `Code.gs`'s source code — admin
   dashboard changes take effect within about a minute (short cache TTL on the
@@ -74,6 +74,9 @@ in sync with your local `Code.gs`:
 (optional `dateFrom`/`dateTo`/`eventType`/`status` filters), `admin-cancel`
 (`eventId`), `admin-reschedule` (`eventId`, `newDate`, `newTime`),
 `admin-resend-reminder` (`eventId`, `kind`: `'confirmation'` or `'reminder'`),
+`admin-mark-no-show` (`eventId` — only for a past `confirmed`/`rescheduled`
+booking; sets status `no-show`, emails the client a "we missed you" note
+with their reschedule link, and starts the automated nudge sequence),
 `admin-list-event-types`, `admin-upsert-event-type` (`id`, `label`,
 `durationMins`, `pricePaise`, `active` — matches on `id`, so this both edits
 and creates), `admin-list-coupons`, `admin-upsert-coupon` (`code`,
@@ -92,6 +95,36 @@ purpose. Setting one triggers a CORS preflight (`OPTIONS`) request, which
 Apps Script Web Apps don't handle — the request silently fails. `e.postData.contents`
 on the Apps Script side parses the raw body regardless of content type, so
 this is safe.
+
+## Booking rules — minimum notice and buffers
+
+Two guards in `Code.gs` shape which slots the picker offers (and, because
+the booking-time re-check reuses the same `buildSlots()` logic, which
+slots can actually be booked):
+
+- `MIN_NOTICE_HOURS` (4) — no slot may start sooner than this from "now",
+  so a new booking always lands with at least a few hours' warning. Applies
+  to the public picker, the reschedule page, and the admin reschedule
+  modal alike.
+- `BUFFER_MINS` (10) — padding enforced before and after every existing
+  calendar event.
+
+## No-show follow-up
+
+No-shows are marked by hand from the admin dashboard (Bookings tab → row
+menu → **Mark no-show**, shown only for past confirmed bookings). Marking
+one:
+
+1. Sets the `Bookings` row to status `no-show` and stamps `noShowMarkedAt`.
+2. Immediately emails the client a "we missed you" note with their existing
+   reschedule link (paid or free — the session is still theirs, no new
+   payment is asked).
+3. Leaves the Calendar event in place so that reschedule link keeps working.
+
+A daily `sendNoShowNudges` trigger (see [SETUP.md](SETUP.md)) then sends one
+nudge per entry in `NO_SHOW_NUDGE_DAYS` (`[3, 7]`) days after marking,
+tracked in `noShowNudgesSent`. Rescheduling or cancelling flips the row's
+status, which is what ends the sequence — nothing else to unsubscribe.
 
 ## Event type catalogue — the Sheet is the source of truth
 

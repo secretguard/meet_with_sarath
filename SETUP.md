@@ -43,11 +43,17 @@ exist, and only seeds `EventTypes` if that tab has zero data rows. Re-running
 it after you've started editing prices via the dashboard will not touch your
 edits.
 
+**If you already have a live sheet from an earlier version:** the newer
+`Bookings` columns (`clientTimezone`, `noShowMarkedAt`, `noShowNudgesSent`)
+are added automatically the first time the backend touches the sheet after
+you deploy the new `Code.gs` — no manual column-adding needed. `status` also
+gains a new value, `no-show`, alongside `confirmed`/`cancelled`/`rescheduled`.
+
 Final schema, for reference:
 
 | Tab | Columns |
 |---|---|
-| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic` |
+| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent` |
 | `EventTypes` | `id, label, durationMins, pricePaise, active` |
 | `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
 
@@ -114,19 +120,22 @@ new version.
 > future confirmation/cancellation/reminder emails to actually use the
 > corrected links. This repo cannot deploy that for you.
 
-## 3. Add the two time-driven triggers
+## 3. Add the three time-driven triggers
 
 Apps Script editor → **Triggers** (clock icon in the left sidebar) → **Add
-Trigger**, twice:
+Trigger**, three times:
 
 1. Function: `sendDayBeforeReminders`
    Event source: Time-driven → Day timer → 7am–8am (or your preferred window)
 2. Function: `sendHourBeforeReminders`
    Event source: Time-driven → Minutes timer → Every 15 minutes
+3. Function: `sendNoShowNudges`
+   Event source: Time-driven → Day timer → any morning hour (e.g. 9am–10am)
 
-Both functions already exist in `Code.gs` — this step just wires them up to
-run automatically. Without this, bookings still work, but no reminder emails
-go out.
+All three functions already exist in `Code.gs` — this step just wires them
+up to run automatically. Without the first two, bookings still work but no
+reminder emails go out; without the third, marking a no-show still sends the
+immediate "we missed you" email, but the day-3 / day-7 nudges never fire.
 
 ## 4. GitHub Pages for this repo
 

@@ -141,6 +141,7 @@
   .badge-confirmed{background:var(--accent-dim);color:var(--accent);}
   .badge-cancelled{background:var(--red-dim);color:var(--red);}
   .badge-rescheduled{background:var(--border);color:var(--muted);}
+  .badge-no-show{background:var(--red-dim);color:var(--red);}
   .badge-active{background:var(--green-dim);color:var(--green);}
   .badge-inactive{background:var(--border);color:var(--muted);}
 
@@ -293,6 +294,7 @@
             <option value="confirmed">Confirmed</option>
             <option value="cancelled">Cancelled</option>
             <option value="rescheduled">Rescheduled</option>
+            <option value="no-show">No-show</option>
           </select>
         </div>
         <button class="btn" onclick="loadBookings()">Filter</button>
@@ -652,6 +654,34 @@
       d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
   }
 
+  // True once the booking's IST start time is behind us — gates the
+  // "Mark no-show" row action so it never shows on an upcoming booking.
+  // Handles both the normal "6:30 PM" time string and the "06:30 pm" form a
+  // rescheduled row carries, plus the legacy ISO-timestamp rows above. If
+  // anything is unparseable, err on the side of hiding the action (the
+  // backend re-checks this anyway).
+  function bookingIsPast(b) {
+    const rawDate = b.date, rawTime = b.time;
+    if (!rawDate) return false;
+    const datePart = looksLikeRawIsoTimestamp(rawDate) ? rawDate.slice(0, 10) : String(rawDate);
+    const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
+    if (!dm) return false;
+    let h = 0, min = 0;
+    if (looksLikeRawIsoTimestamp(rawTime)) {
+      const tm = rawTime.match(/T(\d{2}):(\d{2})/);
+      if (!tm) return false;
+      h = Number(tm[1]); min = Number(tm[2]);
+    } else {
+      const tm = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(String(rawTime || '').trim());
+      if (!tm) return false;
+      h = Number(tm[1]) % 12; if (/pm/i.test(tm[3])) h += 12;
+      min = Number(tm[2]);
+    }
+    const IST_OFFSET_MS = 5.5 * 60 * 60000;
+    const startUtc = Date.UTC(Number(dm[1]), Number(dm[2]) - 1, Number(dm[3]), h, min) - IST_OFFSET_MS;
+    return startUtc < Date.now();
+  }
+
   // ============================================================
   // BOOKINGS TAB
   // ============================================================
@@ -727,7 +757,7 @@
         <td class="cell-muted">${esc(b.couponCode) || '—'}</td>
         <td><span class="badge ${statusClass}">${esc(b.status)}</span></td>
         <td>
-          <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
+          <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" data-status="${esc(b.status)}" data-past="${bookingIsPast(b) ? 1 : 0}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
         </td>
       </tr>`;
     }).join('');
@@ -772,15 +802,24 @@
     const eventId = btn.dataset.eventId;
     const eventType = btn.dataset.eventType;
     const name = btn.dataset.name;
+    const status = btn.dataset.status;
+    const isPast = btn.dataset.past === '1';
+
+    // "Mark no-show" only makes sense for a booking that was live and has
+    // already started — the backend enforces both, this just hides the
+    // option where it would only ever produce an error toast.
+    const canMarkNoShow = isPast && (status === 'confirmed' || status === 'rescheduled');
 
     menu.innerHTML = `
       <button data-action="reschedule">Reschedule</button>
       <button data-action="resend-confirm">Resend confirmation</button>
       <button data-action="resend-reminder">Resend reminder</button>
       <div class="row-menu-divider"></div>
+      ${canMarkNoShow ? '<button class="danger" data-action="no-show">Mark no-show</button>' : ''}
       <button class="danger" data-action="cancel">Cancel booking</button>
     `;
     menu.querySelector('[data-action="reschedule"]').onclick = () => { closeRowMenu(); openRescheduleModal(eventId, eventType, name); };
+    if (canMarkNoShow) menu.querySelector('[data-action="no-show"]').onclick = () => { closeRowMenu(); adminMarkNoShow(eventId, name); };
     menu.querySelector('[data-action="resend-confirm"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'confirmation'); };
     menu.querySelector('[data-action="resend-reminder"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'reminder'); };
     menu.querySelector('[data-action="cancel"]').onclick = () => { closeRowMenu(); adminCancelBooking(eventId); };
@@ -826,6 +865,16 @@
       const data = await adminFetch('admin-cancel', { eventId });
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast('Booking cancelled.', 'success');
+      await loadBookings();
+    } catch (err) {}
+  }
+
+  async function adminMarkNoShow(eventId, name) {
+    if (!confirm(`Mark ${name || 'this booking'} as a no-show? They'll get a "we missed you" email with a reschedule link now, and automatic nudges later unless they rebook.`)) return;
+    try {
+      const data = await adminFetch('admin-mark-no-show', { eventId });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast('Marked as no-show — follow-up email sent.', 'success');
       await loadBookings();
     } catch (err) {}
   }
