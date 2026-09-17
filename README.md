@@ -140,7 +140,13 @@ form shows both links after you add a type.
 measured and optimised: `PageView`; `ViewContent` when a session is
 selected (or a focus landing opens); `InitiateCheckout` on submit;
 `Purchase` (value in INR) when a paid booking is confirmed; `Lead` when a
-free booking is confirmed. The pixel is a no-op when blocked.
+free booking is confirmed. The pixel is a no-op when blocked. The same
+four moments are sent to GA4 in ecommerce vocabulary — `view_item`,
+`begin_checkout`, `purchase` (with `transaction_id` = calendar event id and
+value in INR) and `generate_lead` — so the booking funnel and conversions
+show up in GA4 reports; mark `purchase` and `generate_lead` as key events in
+GA4 admin. Ad links carry UTM parameters, which is how GA4 attributes paid
+traffic to a campaign.
 
 ## Availability and booking rules — edited in the admin panel
 

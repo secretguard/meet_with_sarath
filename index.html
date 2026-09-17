@@ -569,6 +569,19 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   function fbTrack(eventName, params) {
     try { if (window.fbq) fbq('track', eventName, params || {}); } catch (e) {}
   }
+  // ── GA4 EVENTS ────────────────────────────────────────────────
+  // Same four moments as the Pixel, in GA4's ecommerce vocabulary so the
+  // funnel (view_item → begin_checkout → purchase / generate_lead) shows
+  // up in GA4 reports and can be marked as key events. No-op if gtag is
+  // blocked or absent.
+  function gaTrack(eventName, params) {
+    try { if (typeof gtag === 'function') gtag('event', eventName, params || {}); } catch (e) {}
+  }
+  function gaItemFor(typeId, priceRupees) {
+    const t = EVENT_TYPES[typeId] || {};
+    return { item_id: typeId, item_name: t.label || typeId, item_category: 'session', price: priceRupees, quantity: 1 };
+  }
+
   function pixelParamsFor(typeId, extra) {
     const t = EVENT_TYPES[typeId] || {};
     return Object.assign({ content_name: t.label || typeId, content_ids: [typeId], content_type: 'product', value: Math.round((t.pricePaise || 0) / 100), currency: 'INR' }, extra || {});
@@ -732,6 +745,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     document.getElementById('metaDuration').innerHTML = `<strong>${type.duration} min</strong> · ${formatPrice(type.price)}`;
     renderDescription(document.getElementById('descText'), type.description);
     fbTrack('ViewContent', pixelParamsFor(id));
+    gaTrack('view_item', { currency: 'INR', value: type.price, items: [gaItemFor(id, type.price)] });
     document.getElementById('topicLabel').textContent = TOPIC_LABELS[id] || DEFAULT_TOPIC_LABEL;
     document.getElementById('stripTypeValue').textContent = `${type.label} · ${type.duration} min · ${formatPrice(type.price)}`;
 
@@ -1043,6 +1057,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     const type = EVENT_TYPES[selectedType];
     const effective = getEffectivePricePaise();
     fbTrack('InitiateCheckout', pixelParamsFor(selectedType, { value: Math.round(effective / 100) }));
+    gaTrack('begin_checkout', { currency: 'INR', value: Math.round(effective / 100), coupon: appliedCoupon ? appliedCoupon.code : undefined, items: [gaItemFor(selectedType, Math.round(effective / 100))] });
     if (effective > 0) {
       startPaidBooking(payload, type);
     } else {
@@ -1157,8 +1172,13 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   // ── SUCCESS ───────────────────────────────────────────────────
   function showSuccess(payload, eventId) {
     const paidRupees = Math.round(getEffectivePricePaise() / 100);
-    if (paidRupees > 0) fbTrack('Purchase', pixelParamsFor(payload.eventType, { value: paidRupees, order_id: eventId }));
-    else fbTrack('Lead', pixelParamsFor(payload.eventType, { value: 0 }));
+    if (paidRupees > 0) {
+      fbTrack('Purchase', pixelParamsFor(payload.eventType, { value: paidRupees, order_id: eventId }));
+      gaTrack('purchase', { transaction_id: eventId, currency: 'INR', value: paidRupees, coupon: appliedCoupon ? appliedCoupon.code : undefined, items: [gaItemFor(payload.eventType, paidRupees)] });
+    } else {
+      fbTrack('Lead', pixelParamsFor(payload.eventType, { value: 0 }));
+      gaTrack('generate_lead', { currency: 'INR', value: 0, items: [gaItemFor(payload.eventType, 0)] });
+    }
     document.getElementById('rightPanel').style.display = 'none';
     const sc = document.getElementById('successScreen');
     sc.classList.add('show');
