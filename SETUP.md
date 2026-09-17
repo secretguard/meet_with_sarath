@@ -57,7 +57,7 @@ Final schema, for reference:
 | Tab | Columns |
 |---|---|
 | `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent, source` |
-| `EventTypes` | `id, label, durationMins, pricePaise, active` |
+| `EventTypes` | `id, label, durationMins, pricePaise, active, description, listed` — `listed` blank/TRUE = shown on the home page; FALSE = link-only |
 | `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
 | `Availability` | `key, enabled, windows, note` — `key` is `mon`..`sun` or `YYYY-MM-DD`; `windows` like `09:00-12:00, 14:00-20:00` (IST) |
 | `Settings` | `key, value` — `minNoticeHours`, `bufferMins` |

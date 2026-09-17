@@ -478,10 +478,10 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>ID</th><th>Label</th><th>Duration (min)</th><th>Price (₹)</th><th>Active</th><th class="col-actions">Actions</th></tr>
+            <tr><th>ID</th><th>Label</th><th>Duration (min)</th><th>Price (₹)</th><th>Active</th><th title="Unlisted sessions are hidden from the booking page menu but still work via their direct link (?type=id) — for ad-only or audience-specific offers">Listed</th><th class="col-actions">Actions</th></tr>
           </thead>
           <tbody id="eventTypesBody">
-            <tr class="empty-row"><td colspan="6">Loading…</td></tr>
+            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -503,9 +503,13 @@
           <label>Price (₹)</label>
           <input type="number" id="newEtPrice" min="0" step="1" value="0">
         </div>
+        <div class="filter-field">
+          <label>Listed on booking page</label>
+          <select id="newEtListed"><option value="1" selected>Yes</option><option value="">No — link only</option></select>
+        </div>
         <div class="filter-field full-width">
-          <label>Description</label>
-          <textarea id="newEtDescription" rows="2" placeholder="Short marketing copy shown on the booking page once this type is selected. Leave blank to auto-generate."></textarea>
+          <label>Description — lines starting with "- " become bullets</label>
+          <textarea id="newEtDescription" rows="3" placeholder="One-line summary, then bullets:&#10;- What they get, point one&#10;- Point two&#10;- Point three"></textarea>
         </div>
         <button class="btn" onclick="createEventType()">Add Event Type</button>
       </div>
@@ -1509,16 +1513,16 @@
   async function loadEventTypesTab() {
     const reqId = ++eventTypesReqId;
     const body = document.getElementById('eventTypesBody');
-    body.innerHTML = '<tr class="empty-row"><td colspan="6">Loading…</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
     try {
       const data = await adminFetch('admin-list-event-types');
       if (reqId !== eventTypesReqId) return;
-      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="6">${esc(data.error)}</td></tr>`; return; }
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="7">${esc(data.error)}</td></tr>`; return; }
 
       currentEventTypes = data.eventTypes || [];
       populateEventTypeFilter(currentEventTypes);
 
-      if (!currentEventTypes.length) { body.innerHTML = '<tr class="empty-row"><td colspan="6">No event types yet.</td></tr>'; return; }
+      if (!currentEventTypes.length) { body.innerHTML = '<tr class="empty-row"><td colspan="7">No event types yet.</td></tr>'; return; }
 
       body.innerHTML = currentEventTypes.map((t, i) => `
         <tr class="et-row" data-idx="${i}">
@@ -1527,16 +1531,17 @@
           <td><input type="number" data-field="durationMins" value="${esc(t.durationMins)}" min="5" step="5"></td>
           <td><input type="number" data-field="pricePaise" value="${Math.round((Number(t.pricePaise) || 0) / 100)}" min="0" step="1"></td>
           <td class="checkbox-cell"><input type="checkbox" data-field="active" ${t.active === true || t.active === 'TRUE' ? 'checked' : ''}></td>
+          <td class="checkbox-cell"><input type="checkbox" data-field="listed" ${(t.listed === false || t.listed === 'FALSE' || t.listed === 'false') ? '' : 'checked'}></td>
           <td class="col-actions" style="width:auto;"><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
         </tr>
         <tr class="et-desc-row" data-idx="${i}">
-          <td colspan="6">
-            <label>Description</label>
-            <textarea data-field="description" rows="2" placeholder="Short marketing copy shown on the booking page once this type is selected.">${esc(t.description || '')}</textarea>
+          <td colspan="7">
+            <label>Description — lines starting with "- " become bullets on the booking page and in the ad landing view (?type=${esc(t.id)}&amp;focus=1)</label>
+            <textarea data-field="description" rows="3" placeholder="One-line summary, then bullets:&#10;- What they get, point one&#10;- Point two&#10;- Point three">${esc(t.description || '')}</textarea>
           </td>
         </tr>`).join('');
     } catch (err) {
-      if (reqId === eventTypesReqId) body.innerHTML = '<tr class="empty-row"><td colspan="6">Could not load event types. Please try again.</td></tr>';
+      if (reqId === eventTypesReqId) body.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load event types. Please try again.</td></tr>';
     }
   }
 
@@ -1555,13 +1560,14 @@
     const durationMins = Number(row.querySelector('[data-field="durationMins"]').value);
     const priceRupees = Number(row.querySelector('[data-field="pricePaise"]').value);
     const active = row.querySelector('[data-field="active"]').checked;
+    const listed = row.querySelector('[data-field="listed"]').checked;
     const description = descRow.querySelector('[data-field="description"]').value.trim();
 
     if (!label || !durationMins) { showToast('Label and duration are required.', 'error'); return; }
 
     try {
       const data = await adminFetch('admin-upsert-event-type', {
-        id: t.id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active, description
+        id: t.id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active, listed, description
       });
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast(`"${label}" saved.`, 'success');
@@ -1586,14 +1592,14 @@
 
     try {
       const data = await adminFetch('admin-upsert-event-type', {
-        id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active: true, description
+        id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active: true, listed: document.getElementById('newEtListed').value === '1', description
       });
       if (data.error) {
         statusEl.textContent = data.error;
         statusEl.className = 'form-status error';
         return;
       }
-      statusEl.textContent = `"${label}" added.`;
+      statusEl.textContent = `"${label}" added. Direct link: ${location.origin}/?type=${id} — ad landing: ${location.origin}/?type=${id}&focus=1`;
       statusEl.className = 'form-status success';
       idInput.value = '';
       document.getElementById('newEtLabel').value = '';

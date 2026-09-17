@@ -51,11 +51,11 @@ in sync with your local `Code.gs`:
 
 **Public actions:**
 
-- `GET ?action=event-types` → `{ eventTypes: [{ id, label, duration, price, active }, ...] }`
-  — read live from the `EventTypes` sheet (active types only); `index.html`
-  fetches this on load instead of hardcoding the catalogue, so a price/label
-  change made in the admin dashboard shows up on the booking page without a
-  redeploy.
+- `GET ?action=event-types` → `{ eventTypes: [{ id, label, duration, price, active, description, listed }, ...] }`
+  — read live from the `EventTypes` sheet (active types only, including
+  unlisted ones with `listed: false`); `index.html` fetches this on load
+  instead of hardcoding the catalogue, so a price/label change made in the
+  admin dashboard shows up on the booking page without a redeploy.
 - `GET ?action=availability` → `{ offWeekdays: [0..6], blockedDates: ['YYYY-MM-DD'] }`
   — only the on/off shape (no hours); booking calendars grey those days out.
 - `GET ?date=YYYY-MM-DD&eventType={id}[&adminToken=…]` → `{ date, eventType, slots: [...] }`
@@ -112,6 +112,35 @@ purpose. Setting one triggers a CORS preflight (`OPTIONS`) request, which
 Apps Script Web Apps don't handle — the request silently fails. `e.postData.contents`
 on the Apps Script side parses the raw body regardless of content type, so
 this is safe.
+
+## Deep links, focused landing pages, and unlisted sessions
+
+For ads and direct links, the booking page accepts two query parameters:
+
+- `/?type=<id>` — pre-selects that session and opens on the date step; the
+  rest of the menu stays available via "Change".
+- `/?type=<id>&focus=1` — **focused landing**: the session-type picker is
+  removed and a hero (name, duration, price, what-you-get bullets) sits
+  directly above the date picker. Nothing else — in particular no free
+  session — is visible. Use this as the destination for any paid ad.
+
+Session descriptions are plain text; lines starting with `- ` render as
+bullets (on the booking page's left panel and in the focus hero). Write a
+one-line intro followed by three bullets for anything you'll advertise.
+
+Each event type has a **Listed** flag (admin → Event Types). Unlisted
+sessions are hidden from the home-page menu but work through their direct
+link — for ad-only, coupon-priced, or audience-specific offers. The admin
+form shows both links after you add a type.
+
+## Analytics
+
+`index.html` carries GA4, Microsoft Clarity and the **Meta Pixel**
+(`1131377436123001`). The Pixel fires standard events so Meta ads can be
+measured and optimised: `PageView`; `ViewContent` when a session is
+selected (or a focus landing opens); `InitiateCheckout` on submit;
+`Purchase` (value in INR) when a paid booking is confirmed; `Lead` when a
+free booking is confirmed. The pixel is a no-op when blocked.
 
 ## Availability and booking rules — edited in the admin panel
 

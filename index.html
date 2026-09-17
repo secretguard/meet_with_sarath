@@ -108,6 +108,38 @@
   .meta-item strong{color:var(--text);font-weight:500;}
   .meta-icon{width:15px;height:15px;flex-shrink:0;color:var(--muted);}
   .desc{font-size:15px;color:var(--muted);line-height:1.7;}
+  .desc p{margin:0 0 10px;}
+  .desc p:last-child{margin-bottom:0;}
+  .desc ul{margin:0;padding-left:18px;}
+  .desc li{margin:4px 0;}
+
+  /* FOCUS MODE (?type=<id>&focus=1) — an ad/deep-link landing: the type
+     picker is removed and this hero states the one session's name, price
+     and what you get, immediately above the date step. One decision. */
+  .focus-hero{display:none;padding-bottom:26px;border-bottom:1px solid var(--border);margin-bottom:22px;}
+  body.focus-mode .focus-hero{display:block;}
+  .focus-kicker{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .focus-title{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--text);line-height:1.15;margin:0 0 8px;}
+  .focus-meta{font-size:14px;color:var(--muted);margin-bottom:14px;}
+  .focus-meta strong{color:var(--accent);font-weight:600;}
+  .focus-bullets{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;}
+  .focus-bullets li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text);line-height:1.5;}
+  .focus-bullets li::before{content:'';width:16px;height:16px;flex-shrink:0;margin-top:2px;border-radius:50%;background:var(--accent-soft, rgba(205,168,104,.15));border:1px solid var(--accent);}
+  .focus-note{font-size:13px;color:var(--muted);margin-top:14px;line-height:1.6;}
+  body.focus-mode #step-type{display:none !important;}
+  /* Mobile focus mode: the profile panel collapses to a one-line header
+     (photo · name · role) so the hero — title, price, bullets — is the
+     first thing an ad click sees; the session details and description are
+     already in the hero, so they're dropped here rather than repeated. */
+  @media (max-width:680px){
+    body.focus-mode .left{flex-direction:row;align-items:center;gap:14px;padding:18px 24px;}
+    body.focus-mode .left .avatar{width:42px;height:42px;}
+    body.focus-mode .left .host-name{font-size:17px;margin-bottom:2px;}
+    body.focus-mode .left .portfolio-link{display:none;}
+    body.focus-mode .left .divider,
+    body.focus-mode .left > div:has(.meta-label),
+    body.focus-mode .left .desc{display:none;}
+  }
 
   /* RIGHT PANEL */
   .right{flex:1;padding:44px 40px;display:flex;flex-direction:column;min-width:0;}
@@ -250,6 +282,23 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
     })(window, document, "clarity", "script", "yet1lzjxmr");
 </script>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1131377436123001');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
 
@@ -297,6 +346,15 @@
 
     <!-- RIGHT -->
     <div class="right" id="rightPanel">
+
+      <!-- FOCUS HERO (only rendered in ?focus=1 mode) -->
+      <div class="focus-hero" id="focusHero">
+        <div class="focus-kicker">1:1 with Sarath G · Google Meet</div>
+        <h2 class="focus-title" id="focusTitle"></h2>
+        <div class="focus-meta" id="focusMeta"></div>
+        <ul class="focus-bullets" id="focusBullets"></ul>
+        <div class="focus-note" id="focusNote">Pick a date and time below — you'll get a calendar invite and a confirmation email straight away.</div>
+      </div>
 
       <!-- STEP: EVENT TYPE -->
       <div class="step" id="step-type" data-step="type" data-state="active">
@@ -501,6 +559,68 @@
     return rupees > 0 ? '₹' + rupees.toLocaleString('en-IN') : 'Free';
   }
 
+  // ── META PIXEL EVENTS ──────────────────────────────────────────
+  // Standard events so ad campaigns can be optimised and measured:
+  //   ViewContent      — a session type is selected (or a focus landing opens)
+  //   InitiateCheckout — the visitor submits the form (paid: before Razorpay)
+  //   Purchase         — a paid booking is confirmed (value in INR)
+  //   Lead             — a free booking is confirmed
+  // No-op when the pixel script is blocked or absent.
+  function fbTrack(eventName, params) {
+    try { if (window.fbq) fbq('track', eventName, params || {}); } catch (e) {}
+  }
+  function pixelParamsFor(typeId, extra) {
+    const t = EVENT_TYPES[typeId] || {};
+    return Object.assign({ content_name: t.label || typeId, content_ids: [typeId], content_type: 'product', value: Math.round((t.pricePaise || 0) / 100), currency: 'INR' }, extra || {});
+  }
+
+  // ── DESCRIPTION RENDERING ────────────────────────────────────────
+  // Admin-entered description is plain text; lines starting with "- " or
+  // "• " become bullets, other lines become paragraphs. Used for the left
+  // panel and (bullets only) the focus hero.
+  function parseDescription(text) {
+    const lines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const bullets = [], paras = [];
+    lines.forEach(l => { const m = /^[-•*]\s+(.*)$/.exec(l); if (m) bullets.push(m[1]); else paras.push(l); });
+    return { bullets, paras };
+  }
+  function renderDescription(el, text) {
+    const { bullets, paras } = parseDescription(text);
+    el.innerHTML = '';
+    paras.forEach(p => { const e = document.createElement('p'); e.textContent = p; el.appendChild(e); });
+    if (bullets.length) {
+      const ul = document.createElement('ul');
+      bullets.forEach(b => { const li = document.createElement('li'); li.textContent = b; ul.appendChild(li); });
+      el.appendChild(ul);
+    }
+  }
+
+  // ── DEEP LINK / FOCUS MODE ───────────────────────────────────────
+  // ?type=<id>         pre-selects that session on the normal page
+  // ?type=<id>&focus=1 ad landing: removes the picker, shows the hero,
+  //                    lands on the date step. Unlisted types work here.
+  const PAGE_PARAMS = new URLSearchParams(window.location.search);
+  const DEEP_LINK_TYPE = (PAGE_PARAMS.get('type') || '').trim();
+  const FOCUS_MODE = !!DEEP_LINK_TYPE && PAGE_PARAMS.get('focus') === '1';
+
+  function applyFocusHero(id) {
+    const type = EVENT_TYPES[id];
+    document.getElementById('focusTitle').textContent = type.label;
+    document.getElementById('focusMeta').innerHTML = `${type.duration} min &nbsp;·&nbsp; <strong>${formatPrice(type.price)}</strong>`;
+    const ul = document.getElementById('focusBullets');
+    ul.innerHTML = '';
+    const { bullets, paras } = parseDescription(type.description);
+    (bullets.length ? bullets : paras).forEach(b => { const li = document.createElement('li'); li.textContent = b; ul.appendChild(li); });
+    // Left panel keeps only the intro sentence(s) — the bullets live in the hero
+    if (bullets.length) renderDescription(document.getElementById('descText'), paras.join('\n'));
+    document.body.classList.add('focus-mode');
+    // Steps renumber 01/02/03 since the type step is gone
+    ['date', 'time', 'details'].forEach((k, i) => {
+      const n = document.querySelector(`#step-${k} .step-num`);
+      if (n) n.textContent = String(i + 1).padStart(2, '0');
+    });
+  }
+
   // ── TIMEZONE DETECTION ──────────────────────────────────────────
   // CLIENT_TZ drives the slot grid's local-time conversion below. All times
   // actually SENT to the backend remain IST strings — this only changes
@@ -566,12 +686,18 @@
           duration: t.duration,
           price: Math.round(t.price / 100),   // rupees, display only
           pricePaise: t.price,                 // real unit, used for all logic
-          description: (t.description && t.description.trim()) || autoDescription
+          description: (t.description && t.description.trim()) || autoDescription,
+          listed: t.listed !== false
         };
       });
 
       grid.className = 'type-grid';
       renderTypeGrid();
+
+      if (DEEP_LINK_TYPE && EVENT_TYPES[DEEP_LINK_TYPE]) {
+        selectType(DEEP_LINK_TYPE);
+        if (FOCUS_MODE) applyFocusHero(DEEP_LINK_TYPE);
+      }
     } catch (err) {
       grid.className = 'type-grid error';
       grid.textContent = 'Could not load session types. Please refresh the page.';
@@ -584,6 +710,7 @@
     grid.innerHTML = '';
     Object.keys(EVENT_TYPES).forEach(id => {
       const type = EVENT_TYPES[id];
+      if (type.listed === false && selectedType !== id) return; // link-only session: off the menu unless it's the one deep-linked
       const card = document.createElement('div');
       card.className = 'type-card' + (selectedType === id ? ' selected' : '');
       card.innerHTML = `
@@ -603,7 +730,8 @@
     renderTypeGrid();
 
     document.getElementById('metaDuration').innerHTML = `<strong>${type.duration} min</strong> · ${formatPrice(type.price)}`;
-    document.getElementById('descText').textContent = type.description;
+    renderDescription(document.getElementById('descText'), type.description);
+    fbTrack('ViewContent', pixelParamsFor(id));
     document.getElementById('topicLabel').textContent = TOPIC_LABELS[id] || DEFAULT_TOPIC_LABEL;
     document.getElementById('stripTypeValue').textContent = `${type.label} · ${type.duration} min · ${formatPrice(type.price)}`;
 
@@ -914,6 +1042,7 @@
 
     const type = EVENT_TYPES[selectedType];
     const effective = getEffectivePricePaise();
+    fbTrack('InitiateCheckout', pixelParamsFor(selectedType, { value: Math.round(effective / 100) }));
     if (effective > 0) {
       startPaidBooking(payload, type);
     } else {
@@ -1027,6 +1156,9 @@
 
   // ── SUCCESS ───────────────────────────────────────────────────
   function showSuccess(payload, eventId) {
+    const paidRupees = Math.round(getEffectivePricePaise() / 100);
+    if (paidRupees > 0) fbTrack('Purchase', pixelParamsFor(payload.eventType, { value: paidRupees, order_id: eventId }));
+    else fbTrack('Lead', pixelParamsFor(payload.eventType, { value: 0 }));
     document.getElementById('rightPanel').style.display = 'none';
     const sc = document.getElementById('successScreen');
     sc.classList.add('show');
@@ -1053,6 +1185,7 @@
     document.getElementById('rightPanel').style.display = 'flex';
     document.getElementById('metaDuration').textContent = 'Select a session type';
     document.getElementById('descText').textContent = "Pick a session type to see what it's about.";
+    document.body.classList.remove('focus-mode');
     document.getElementById('slotsContainer').innerHTML = '<div class="no-slots">Select a date first</div>';
     document.getElementById('slotDateLabel').textContent = '';
     appliedCoupon = null;
