@@ -180,20 +180,65 @@
   .page-btn svg{width:12px;height:12px;}
   .page-indicator{font-size:11.5px;color:var(--text);min-width:70px;text-align:center;}
 
-  /* ── INLINE EDIT ROWS (event types) ─────────────────────── */
-  .et-row input[type="text"], .et-row input[type="number"]{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;width:100%;}
-  .et-row input:focus{border-color:var(--accent);}
-  .et-row input[type="text"].id-input{width:130px;}
-  .et-row input[type="number"]{width:80px;}
-  .checkbox-cell{display:flex;align-items:center;justify-content:center;}
-  .checkbox-cell input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
-
-  /* Full-width description row under each event type — a wide textarea
-     doesn't fit a table column, so it gets its own colspan row instead. */
-  .et-desc-row td{white-space:normal;padding-top:0;}
-  .et-desc-row label{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-  .et-desc-row textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 11px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;resize:vertical;min-height:44px;}
-  .et-desc-row textarea:focus{border-color:var(--accent);}
+  /* ── EVENT TYPE CARDS ────────────────────────────────────
+     One card per session type instead of a table: the description needs
+     the full width, the two flags need names, and the list must fit any
+     viewport (the operator works on a touchpad). Collapsed = what the
+     visitor sees; Edit expands the same card into a labelled form. */
+  .et-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .et-toolbar p{font-size:12px;color:var(--muted);margin:0;}
+  .et-list{display:flex;flex-direction:column;gap:12px;}
+  .et-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;transition:border-color .15s;}
+  .et-card.editing{border-color:var(--accent);background:var(--panel);}
+  .et-card.retired{opacity:.72;}
+  .et-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .et-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.35;}
+  .et-id{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;color:var(--muted);margin-top:2px;}
+  .et-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .et-price{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;}
+  .et-pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:500;white-space:nowrap;}
+  .et-pill.on{background:var(--green-dim);color:var(--green);}
+  .et-pill.off{background:var(--border);color:var(--muted);}
+  .et-pill.link{background:var(--red-dim);color:var(--red);}
+  .et-preview{margin-top:10px;font-size:12.5px;color:var(--text);line-height:1.55;max-width:70ch;}
+  .et-preview p{margin:0 0 4px;}
+  .et-preview ul{margin:4px 0 0;padding-left:18px;}
+  .et-preview li{margin:2px 0;}
+  .et-preview.empty{color:var(--muted);font-style:italic;}
+  .et-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .et-actions button, .et-actions .btn{font-family:var(--sans);}
+  .et-actions .ghost{background:none;border:1px solid var(--border);border-radius:7px;padding:7px 11px;font-size:10.5px;color:var(--muted);cursor:pointer;transition:border-color .2s,color .2s;}
+  .et-actions .ghost:hover{border-color:var(--accent);color:var(--text);}
+  /* edit form */
+  .et-form{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .et-form .filter-field input{min-width:0;width:100%;}
+  .et-form .span-all{grid-column:1 / -1;}
+  .et-form textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;resize:vertical;min-height:96px;line-height:1.5;}
+  .et-form textarea:focus{border-color:var(--accent);}
+  .et-form .hint{font-size:11px;color:var(--muted);margin-top:4px;}
+  .et-desc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .et-desc-grid .filter-field{min-width:0;}
+  .et-live{background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:10px 12px;min-height:96px;}
+  .et-live .et-preview{margin-top:0;}
+  @media (max-width:640px){ .et-desc-grid{grid-template-columns:1fr;} }
+  /* toggle switch */
+  .switch{display:flex;align-items:flex-start;gap:10px;cursor:pointer;user-select:none;padding-top:2px;}
+  .switch input{position:absolute;opacity:0;width:0;height:0;}
+  .switch .track{flex:0 0 auto;width:36px;height:20px;border-radius:20px;background:var(--border);position:relative;transition:background .2s;margin-top:1px;}
+  .switch .track::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s;}
+  .switch input:checked + .track{background:var(--green);}
+  .switch input:checked + .track::after{transform:translateX(16px);}
+  .switch input:focus-visible + .track{outline:2px solid var(--accent);outline-offset:2px;}
+  .switch .sw-text{display:flex;flex-direction:column;gap:1px;}
+  .switch .sw-label{font-size:12px;font-weight:600;color:var(--text);}
+  .switch .sw-help{font-size:11px;color:var(--muted);line-height:1.4;}
+  /* retired group */
+  .et-retired{margin-top:18px;border-top:1px solid var(--border);padding-top:14px;}
+  .et-retired summary{cursor:pointer;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;}
+  .et-retired summary::-webkit-details-marker{display:none;}
+  .et-retired summary::before{content:'▸';font-size:11px;transition:transform .15s;}
+  .et-retired[open] summary::before{transform:rotate(90deg);}
+  .et-retired .et-list{margin-top:12px;}
 
   /* ── FORM (add event type / coupon) ─────────────────────── */
   .inline-form{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
@@ -479,45 +524,16 @@
   <div class="tab-panel" id="tab-eventtypes">
     <div class="panel">
       <h2>Event Types</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>ID</th><th>Label</th><th>Duration (min)</th><th>Price (₹)</th><th>Active</th><th title="Unlisted sessions are hidden from the booking page menu but still work via their direct link (?type=id) — for ad-only or audience-specific offers">Listed</th><th class="col-actions">Actions</th></tr>
-          </thead>
-          <tbody id="eventTypesBody">
-            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
-          </tbody>
-        </table>
+      <div class="et-toolbar">
+        <p>Each card shows a session the way visitors see it. <strong>Copy link</strong> opens the normal page with that session pre-selected; <strong>Copy ad link</strong> is the focused landing (no menu, straight to the calendar) for ads, reels and WhatsApp.</p>
+        <button class="btn btn-sm" id="etAddBtn" onclick="startNewEventType()">+ Add session type</button>
       </div>
-
-      <div class="inline-form" id="newEventTypeForm">
-        <div class="filter-field">
-          <label>ID</label>
-          <input type="text" id="newEtId" placeholder="e.g. quick-chat">
-        </div>
-        <div class="filter-field">
-          <label>Label</label>
-          <input type="text" id="newEtLabel" placeholder="Session name">
-        </div>
-        <div class="filter-field">
-          <label>Duration (min)</label>
-          <input type="number" id="newEtDuration" min="5" step="5" value="30">
-        </div>
-        <div class="filter-field">
-          <label>Price (₹)</label>
-          <input type="number" id="newEtPrice" min="0" step="1" value="0">
-        </div>
-        <div class="filter-field">
-          <label>Listed on booking page</label>
-          <select id="newEtListed"><option value="1" selected>Yes</option><option value="">No — link only</option></select>
-        </div>
-        <div class="filter-field full-width">
-          <label>Description — lines starting with "- " become bullets</label>
-          <textarea id="newEtDescription" rows="3" placeholder="One-line summary, then bullets:&#10;- What they get, point one&#10;- Point two&#10;- Point three"></textarea>
-        </div>
-        <button class="btn" onclick="createEventType()">Add Event Type</button>
-      </div>
-      <div class="form-status" id="etFormStatus"></div>
+      <div class="et-list" id="etNewSlot"></div>
+      <div class="et-list" id="etLiveList"><div class="et-card"><span class="et-id">Loading…</span></div></div>
+      <details class="et-retired" id="etRetired" style="display:none">
+        <summary><span id="etRetiredLabel">Retired</span></summary>
+        <div class="et-list" id="etRetiredList"></div>
+      </details>
     </div>
   </div>
 
@@ -1535,39 +1551,49 @@
   // ============================================================
   let currentEventTypes = [];
   let eventTypesReqId = 0; // see bookingsReqId's comment — same stale-response guard
+  let etEditingId = null;  // id of the card in edit mode, or '__new__'
+
+  const isTrue = v => v === true || v === 'TRUE' || v === 'true';
+  const isListed = t => !(t.listed === false || t.listed === 'FALSE' || t.listed === 'false');
+
+  // Same rule as the booking page: lines starting "- " become bullets.
+  function parseDescription(text) {
+    const lines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const bullets = [], paras = [];
+    lines.forEach(l => { const m = /^[-•*]\s+(.*)$/.exec(l); if (m) bullets.push(m[1]); else paras.push(l); });
+    return { bullets, paras };
+  }
+  function descriptionHtml(text) {
+    const { bullets, paras } = parseDescription(text);
+    if (!paras.length && !bullets.length) return '<div class="et-preview empty">No description yet.</div>';
+    return `<div class="et-preview">${paras.map(p => `<p>${esc(p)}</p>`).join('')}${bullets.length ? `<ul>${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}</div>`;
+  }
+
+  function typeLink(id, focus) {
+    return `${location.origin}/?type=${encodeURIComponent(id)}${focus ? '&focus=1' : ''}`;
+  }
+  async function copyText(text, what) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+      else { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+      showToast(`${what} copied: ${text}`, 'success');
+    } catch (e) { showToast(`Could not copy. ${text}`, 'error'); }
+  }
+  function copyTypeLink(id, focus) { copyText(typeLink(id, focus), focus ? 'Ad link' : 'Link'); }
 
   async function loadEventTypesTab() {
     const reqId = ++eventTypesReqId;
-    const body = document.getElementById('eventTypesBody');
-    body.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
+    const live = document.getElementById('etLiveList');
+    live.innerHTML = '<div class="et-card"><span class="et-id">Loading…</span></div>';
     try {
       const data = await adminFetch('admin-list-event-types');
       if (reqId !== eventTypesReqId) return;
-      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="7">${esc(data.error)}</td></tr>`; return; }
-
+      if (data.error) { live.innerHTML = `<div class="et-card"><span class="et-id">${esc(data.error)}</span></div>`; return; }
       currentEventTypes = data.eventTypes || [];
       populateEventTypeFilter(currentEventTypes);
-
-      if (!currentEventTypes.length) { body.innerHTML = '<tr class="empty-row"><td colspan="7">No event types yet.</td></tr>'; return; }
-
-      body.innerHTML = currentEventTypes.map((t, i) => `
-        <tr class="et-row" data-idx="${i}">
-          <td><input type="text" class="id-input" value="${esc(t.id)}" disabled></td>
-          <td><input type="text" data-field="label" value="${esc(t.label)}"></td>
-          <td><input type="number" data-field="durationMins" value="${esc(t.durationMins)}" min="5" step="5"></td>
-          <td><input type="number" data-field="pricePaise" value="${Math.round((Number(t.pricePaise) || 0) / 100)}" min="0" step="1"></td>
-          <td class="checkbox-cell"><input type="checkbox" data-field="active" ${t.active === true || t.active === 'TRUE' ? 'checked' : ''}></td>
-          <td class="checkbox-cell"><input type="checkbox" data-field="listed" ${(t.listed === false || t.listed === 'FALSE' || t.listed === 'false') ? '' : 'checked'}></td>
-          <td class="col-actions" style="width:auto;"><button class="btn btn-sm" onclick="saveEventType(${i})">Save</button></td>
-        </tr>
-        <tr class="et-desc-row" data-idx="${i}">
-          <td colspan="7">
-            <label>Description — lines starting with "- " become bullets on the booking page and in the ad landing view (?type=${esc(t.id)}&amp;focus=1)</label>
-            <textarea data-field="description" rows="3" placeholder="One-line summary, then bullets:&#10;- What they get, point one&#10;- Point two&#10;- Point three">${esc(t.description || '')}</textarea>
-          </td>
-        </tr>`).join('');
+      renderEventTypes();
     } catch (err) {
-      if (reqId === eventTypesReqId) body.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load event types. Please try again.</td></tr>';
+      if (reqId === eventTypesReqId) live.innerHTML = '<div class="et-card"><span class="et-id">Could not load event types. Please try again.</span></div>';
     }
   }
 
@@ -1578,60 +1604,140 @@
     sel.value = current;
   }
 
-  async function saveEventType(idx) {
-    const row = document.querySelector(`.et-row[data-idx="${idx}"]`);
-    const descRow = document.querySelector(`.et-desc-row[data-idx="${idx}"]`);
-    const t = currentEventTypes[idx];
-    const label = row.querySelector('[data-field="label"]').value.trim();
-    const durationMins = Number(row.querySelector('[data-field="durationMins"]').value);
-    const priceRupees = Number(row.querySelector('[data-field="pricePaise"]').value);
-    const active = row.querySelector('[data-field="active"]').checked;
-    const listed = row.querySelector('[data-field="listed"]').checked;
-    const description = descRow.querySelector('[data-field="description"]').value.trim();
+  function renderEventTypes() {
+    const live = document.getElementById('etLiveList');
+    const retiredBox = document.getElementById('etRetired');
+    const retiredList = document.getElementById('etRetiredList');
+    const liveTypes = currentEventTypes.filter(t => isTrue(t.active));
+    const retiredTypes = currentEventTypes.filter(t => !isTrue(t.active));
 
-    if (!label || !durationMins) { showToast('Label and duration are required.', 'error'); return; }
+    live.innerHTML = liveTypes.length ? liveTypes.map(cardHtml).join('') : '<div class="et-card"><span class="et-id">No live session types. Add one above.</span></div>';
+    if (retiredTypes.length) {
+      retiredBox.style.display = '';
+      document.getElementById('etRetiredLabel').textContent = `Retired (${retiredTypes.length}) — hidden everywhere, booking history kept`;
+      retiredList.innerHTML = retiredTypes.map(cardHtml).join('');
+    } else {
+      retiredBox.style.display = 'none';
+      retiredList.innerHTML = '';
+    }
+    // (re)bind the live preview of whichever card is being edited
+    document.querySelectorAll('.et-card.editing textarea[data-field="description"]').forEach(ta => {
+      const target = ta.closest('.et-card').querySelector('.et-live');
+      const paint = () => { target.innerHTML = descriptionHtml(ta.value); };
+      ta.addEventListener('input', paint); paint();
+    });
+  }
 
+  function cardHtml(t) {
+    const active = isTrue(t.active), listed = isListed(t);
+    const id = esc(t.id);
+    const price = Number(t.pricePaise) ? '₹' + Math.round(Number(t.pricePaise) / 100).toLocaleString('en-IN') : 'Free';
+    const editing = etEditingId === t.id;
+    return `
+      <div class="et-card${editing ? ' editing' : ''}${active ? '' : ' retired'}" data-id="${id}">
+        <div class="et-head">
+          <div>
+            <div class="et-title">${esc(t.label)}</div>
+            <div class="et-id">${id}</div>
+          </div>
+          <div class="et-meta">
+            <span class="et-price">${price} · ${esc(t.durationMins)} min</span>
+            ${active ? '<span class="et-pill on">Active</span>' : '<span class="et-pill off">Retired</span>'}
+            ${active ? (listed ? '<span class="et-pill on">Listed</span>' : '<span class="et-pill link">Link only</span>') : ''}
+          </div>
+        </div>
+        ${editing ? formHtml(t, false) : `
+          ${descriptionHtml(t.description)}
+          <div class="et-actions">
+            <button class="ghost" onclick="copyTypeLink('${id}', false)" title="${esc(typeLink(t.id, false))}">Copy link</button>
+            <button class="ghost" onclick="copyTypeLink('${id}', true)" title="${esc(typeLink(t.id, true))}">Copy ad link</button>
+            <button class="ghost" onclick="editEventType('${id}')">Edit</button>
+          </div>`}
+      </div>`;
+  }
+
+  // Shared by edit (existing) and add (new). `isNew` adds the ID field.
+  function formHtml(t, isNew) {
+    const active = isNew ? true : isTrue(t.active), listed = isNew ? true : isListed(t);
+    return `
+      <div class="et-form">
+        ${isNew ? `<div class="filter-field"><label>ID (URL key, lowercase-with-hyphens)</label><input type="text" data-field="id" placeholder="e.g. resume-teardown"></div>` : ''}
+        <div class="filter-field"><label>Label</label><input type="text" data-field="label" value="${esc(t.label || '')}" placeholder="Session name"></div>
+        <div class="filter-field"><label>Duration (min)</label><input type="number" data-field="durationMins" value="${esc(t.durationMins || 30)}" min="5" step="5"></div>
+        <div class="filter-field"><label>Price (₹)</label><input type="number" data-field="pricePaise" value="${Math.round((Number(t.pricePaise) || 0) / 100)}" min="0" step="1"></div>
+        <label class="switch"><input type="checkbox" data-field="active" ${active ? 'checked' : ''}><span class="track"></span><span class="sw-text"><span class="sw-label">Active</span><span class="sw-help">Accepts bookings. Off = retired: hidden everywhere, existing bookings untouched.</span></span></label>
+        <label class="switch"><input type="checkbox" data-field="listed" ${listed ? 'checked' : ''}><span class="track"></span><span class="sw-text"><span class="sw-label">Listed</span><span class="sw-help">Shown in the public menu. Off = works only through its link (ad-only or audience-specific offers).</span></span></label>
+        <div class="span-all et-desc-grid">
+          <div class="filter-field">
+            <label>Description</label>
+            <textarea data-field="description" placeholder="One-line summary, then bullets:&#10;- What they get, point one&#10;- Point two&#10;- Point three">${esc(t.description || '')}</textarea>
+            <div class="hint">First line(s) = summary. Lines starting with "- " become bullets on the booking page and the ad landing.</div>
+          </div>
+          <div class="filter-field">
+            <label>Preview (as visitors see it)</label>
+            <div class="et-live"></div>
+          </div>
+        </div>
+        <div class="span-all et-actions">
+          <button class="btn btn-sm" onclick="${isNew ? 'createEventType()' : `saveEventType('${esc(t.id)}')`}">${isNew ? 'Add session type' : 'Save'}</button>
+          <button class="ghost" onclick="cancelEditEventType()">Cancel</button>
+        </div>
+      </div>`;
+  }
+
+  function editEventType(id) { etEditingId = id; closeNewEventType(); renderEventTypes(); }
+  function cancelEditEventType() { etEditingId = null; closeNewEventType(); renderEventTypes(); }
+
+  function startNewEventType() {
+    etEditingId = '__new__';
+    const slot = document.getElementById('etNewSlot');
+    slot.innerHTML = `<div class="et-card editing" data-id="__new__"><div class="et-head"><div><div class="et-title">New session type</div></div></div>${formHtml({}, true)}</div>`;
+    document.getElementById('etAddBtn').style.display = 'none';
+    renderEventTypes();
+    slot.querySelector('[data-field="id"]').focus();
+  }
+  function closeNewEventType() {
+    document.getElementById('etNewSlot').innerHTML = '';
+    document.getElementById('etAddBtn').style.display = '';
+    if (etEditingId === '__new__') etEditingId = null;
+  }
+
+  function readForm(card) {
+    return {
+      label: card.querySelector('[data-field="label"]').value.trim(),
+      durationMins: Number(card.querySelector('[data-field="durationMins"]').value),
+      pricePaise: Math.round(Number(card.querySelector('[data-field="pricePaise"]').value) * 100),
+      active: card.querySelector('[data-field="active"]').checked,
+      listed: card.querySelector('[data-field="listed"]').checked,
+      description: card.querySelector('[data-field="description"]').value.trim()
+    };
+  }
+
+  async function saveEventType(id) {
+    const card = document.querySelector(`.et-card[data-id="${CSS.escape(id)}"]`);
+    const f = readForm(card);
+    if (!f.label || !f.durationMins) { showToast('Label and duration are required.', 'error'); return; }
     try {
-      const data = await adminFetch('admin-upsert-event-type', {
-        id: t.id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active, listed, description
-      });
+      const data = await adminFetch('admin-upsert-event-type', { id, ...f });
       if (data.error) { showToast(data.error, 'error'); return; }
-      showToast(`"${label}" saved.`, 'success');
+      showToast(`"${f.label}" saved.`, 'success');
+      etEditingId = null;
       await loadEventTypesTab();
     } catch (err) {}
   }
 
   async function createEventType() {
-    const idInput = document.getElementById('newEtId');
-    const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-    const label = document.getElementById('newEtLabel').value.trim();
-    const durationMins = Number(document.getElementById('newEtDuration').value);
-    const priceRupees = Number(document.getElementById('newEtPrice').value);
-    const description = document.getElementById('newEtDescription').value.trim();
-    const statusEl = document.getElementById('etFormStatus');
-
-    if (!id || !label || !durationMins) {
-      statusEl.textContent = 'ID, label, and duration are required.';
-      statusEl.className = 'form-status error';
-      return;
-    }
-
+    const card = document.querySelector('.et-card[data-id="__new__"]');
+    const idInput = card.querySelector('[data-field="id"]');
+    const id = idInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+    const f = readForm(card);
+    if (!id || !f.label || !f.durationMins) { showToast('ID, label and duration are required.', 'error'); return; }
+    if (currentEventTypes.some(t => t.id === id)) { showToast(`"${id}" already exists — edit that card instead.`, 'error'); return; }
     try {
-      const data = await adminFetch('admin-upsert-event-type', {
-        id, label, durationMins, pricePaise: Math.round(priceRupees * 100), active: true, listed: document.getElementById('newEtListed').value === '1', description
-      });
-      if (data.error) {
-        statusEl.textContent = data.error;
-        statusEl.className = 'form-status error';
-        return;
-      }
-      statusEl.textContent = `"${label}" added. Direct link: ${location.origin}/?type=${id} — ad landing: ${location.origin}/?type=${id}&focus=1`;
-      statusEl.className = 'form-status success';
-      idInput.value = '';
-      document.getElementById('newEtLabel').value = '';
-      document.getElementById('newEtDuration').value = '30';
-      document.getElementById('newEtPrice').value = '0';
-      document.getElementById('newEtDescription').value = '';
+      const data = await adminFetch('admin-upsert-event-type', { id, ...f });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast(`"${f.label}" added. Ad link: ${typeLink(id, true)}`, 'success');
+      closeNewEventType();
       await loadEventTypesTab();
     } catch (err) {}
   }
