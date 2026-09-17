@@ -952,7 +952,7 @@
         </td>
         <td data-label="Status"><span class="badge ${statusClass}">${esc(b.status)}</span></td>
         <td class="col-actions">
-          <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" data-status="${esc(b.status)}" data-past="${bookingIsPast(b) ? 1 : 0}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
+          <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" data-email="${esc(b.email || '')}" data-status="${esc(b.status)}" data-past="${bookingIsPast(b) ? 1 : 0}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
         </td>
       </tr>`;
     }).join('');
@@ -997,6 +997,7 @@
     const eventId = btn.dataset.eventId;
     const eventType = btn.dataset.eventType;
     const name = btn.dataset.name;
+    const email = btn.dataset.email || '';
     const status = btn.dataset.status;
     const isPast = btn.dataset.past === '1';
 
@@ -1012,6 +1013,8 @@
       <button data-action="resend-confirm">Resend confirmation</button>
       <button data-action="resend-reminder">Resend reminder</button>
       <div class="row-menu-divider"></div>
+      <button data-action="invite-folio">Invite to Folio &rarr;</button>
+      <div class="row-menu-divider"></div>
       ${canMarkNoShow ? '<button class="danger" data-action="no-show">Mark no-show</button>' : ''}
       <button class="danger" data-action="cancel">Cancel booking</button>
     `;
@@ -1021,6 +1024,7 @@
     menu.querySelector('[data-action="resend-confirm"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'confirmation'); };
     menu.querySelector('[data-action="resend-reminder"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'reminder'); };
     menu.querySelector('[data-action="cancel"]').onclick = () => { closeRowMenu(); adminCancelBooking(eventId); };
+    menu.querySelector('[data-action="invite-folio"]').onclick = () => { closeRowMenu(); openFolioInvite(eventId, name, email); };
 
     const rect = btn.getBoundingClientRect();
     menu.style.display = 'block'; // measure before final positioning
@@ -1033,6 +1037,22 @@
     menu.classList.add('show');
     btn.classList.add('open');
     openMenuBtn = btn;
+  }
+
+  // Hand a session buyer over to the programme: opens Folio's invite form with
+  // the prospect's details prefilled and the lead source stamped as this
+  // booking, so the eventual student record says where they came from. The
+  // form itself lives behind Folio's login — nothing is created from here.
+  // Pure front end; no backend change, no state on this side.
+  function folioInviteUrl(eventId, name, email) {
+    const q = new URLSearchParams();
+    if (email) q.set('email', email);
+    if (name) q.set('name', name);
+    q.set('source', 'meet:' + (eventId || ''));
+    return 'https://folio.sarathg.me/applications/new?' + q.toString();
+  }
+  function openFolioInvite(eventId, name, email) {
+    window.open(folioInviteUrl(eventId, name, email), '_blank', 'noopener');
   }
 
   function closeRowMenu() {
