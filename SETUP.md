@@ -60,12 +60,14 @@ Final schema, for reference:
 | `EventTypes` | `id, label, durationMins, pricePaise, active, description, listed` — `listed` blank/TRUE = shown on the home page; FALSE = link-only |
 | `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
 | `Availability` | `key, enabled, windows, note` — `key` is `mon`..`sun` or `YYYY-MM-DD`; `windows` like `09:00-12:00, 14:00-20:00` (IST) |
-| `Settings` | `key, value` — `minNoticeHours`, `bufferMins` |
+| `Settings` | `key, value` — `minNoticeHours`, `bufferMins`, `maxDaysAhead` |
 
-A few notes on units and blanks: all prices are in **paise** (₹1 = 100),
-matching Razorpay's own unit — including a flat-discount coupon's
-`discountValue` (a percent-discount coupon's `discountValue` is just a plain
-0–100 number). `maxUses` blank = unlimited for a reusable coupon. `expiry`
+A few notes on units and blanks: session prices (`pricePaise`,
+`pricePaidPaise`) are in **paise** (₹1 = 100), matching Razorpay's own unit.
+A coupon's `discountValue` is **not**: for a flat coupon it is in **rupees**
+(the same number typed into the admin form's "Amount off (₹)" field —
+`Code.gs` multiplies by 100 when it applies it), and for a percent coupon it
+is a plain 0–100 number. `maxUses` blank = unlimited for a reusable coupon. `expiry`
 blank = never expires. `active` is a real boolean (TRUE/FALSE) — the admin
 dashboard writes proper booleans, but the sheet also tolerates the text
 `"TRUE"`/`"FALSE"` if you ever edit a cell by hand.

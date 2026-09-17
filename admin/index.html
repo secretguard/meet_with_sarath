@@ -455,7 +455,7 @@
 
     <div class="panel">
       <h2>Booking rules</h2>
-      <div class="hint">Minimum notice hides any slot starting sooner than this from now (your own bookings from this dashboard ignore it). Buffer is the gap kept before and after every calendar event.</div>
+      <div class="hint">Minimum notice hides any slot starting sooner than this from now. Buffer is the gap kept before and after every calendar event. Booking horizon is how far ahead the public can book (e.g. 45 days). Your own bookings and reschedules from this dashboard ignore the notice and horizon rules.</div>
       <div class="inline-form" style="margin-top:0;padding-top:0;border-top:none;">
         <div class="filter-field">
           <label>Minimum notice (hours)</label>
@@ -464,6 +464,10 @@
         <div class="filter-field">
           <label>Buffer (minutes)</label>
           <input type="number" id="setBuffer" min="0" step="5">
+        </div>
+        <div class="filter-field">
+          <label>Booking horizon (days ahead)</label>
+          <input type="number" id="setMaxDays" min="1" step="1">
         </div>
         <button class="btn" onclick="saveSettings()">Save rules</button>
       </div>
@@ -1359,6 +1363,7 @@
       if (!settings.error && settings.settings) {
         document.getElementById('setMinNotice').value = settings.settings.minNoticeHours;
         document.getElementById('setBuffer').value = settings.settings.bufferMins;
+        document.getElementById('setMaxDays').value = settings.settings.maxDaysAhead;
       }
     } catch (err) {}
   }
@@ -1495,7 +1500,8 @@
     status.textContent = ''; status.className = 'form-status';
     const settings = {
       minNoticeHours: document.getElementById('setMinNotice').value,
-      bufferMins: document.getElementById('setBuffer').value
+      bufferMins: document.getElementById('setBuffer').value,
+      maxDaysAhead: document.getElementById('setMaxDays').value
     };
     try {
       const data = await adminFetch('admin-save-settings', { settings });

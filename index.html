@@ -336,7 +336,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
           </div>
           <div class="meta-item">
             <svg class="meta-icon" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Mon – Sat, 9 AM – 8 PM IST
+            <span id="hoursLabel">Hours loading…</span>
           </div>
         </div>
       </div>
@@ -664,11 +664,30 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     try {
       const res = await fetch(`${CONFIG.API_URL}?action=availability`);
       const data = await res.json();
-      if (data.offWeekdays) { closedDays = data; renderCal(); }
-    } catch (e) {}
+      if (data.offWeekdays) {
+        closedDays = data;
+        // Live hours line in the sidebar (replaces a hardcoded string) —
+        // hidden entirely if the admin has switched every day off.
+        const hoursEl = document.getElementById('hoursLabel');
+        if (data.hoursSummary) hoursEl.textContent = data.hoursSummary;
+        else hoursEl.closest('.meta-item').style.display = 'none';
+        renderCal();
+      }
+    } catch (e) {
+      document.getElementById('hoursLabel').textContent = 'See available dates below';
+    }
   }
+  // Off weekday, blocked date, or beyond the booking horizon (maxDaysAhead
+  // calendar days from today) — the backend enforces all three; this only
+  // greys them out so nobody clicks into "No availability".
   function isClosedDay(dt) {
-    return closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(dateKey(dt)) !== -1;
+    if (closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(dateKey(dt)) !== -1) return true;
+    if (closedDays.maxDaysAhead != null) {
+      const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const daysOut = Math.round((dt - t0) / 86400000);
+      if (daysOut > closedDays.maxDaysAhead) return true;
+    }
+    return false;
   }
 
   // ── STATE ────────────────────────────────────────────────────

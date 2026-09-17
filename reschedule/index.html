@@ -239,7 +239,12 @@
     } catch (e) {}
   }
   function isClosedDay(dt, iso) {
-    return closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(iso) !== -1;
+    if (closedDays.offWeekdays.indexOf(dt.getDay()) !== -1 || closedDays.blockedDates.indexOf(iso) !== -1) return true;
+    if (closedDays.maxDaysAhead != null) {
+      const t0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      if (Math.round((dt - t0) / 86400000) > closedDays.maxDaysAhead) return true;
+    }
+    return false;
   }
 
   function renderCalendar() {

@@ -56,8 +56,11 @@ in sync with your local `Code.gs`:
   unlisted ones with `listed: false`); `index.html` fetches this on load
   instead of hardcoding the catalogue, so a price/label change made in the
   admin dashboard shows up on the booking page without a redeploy.
-- `GET ?action=availability` → `{ offWeekdays: [0..6], blockedDates: ['YYYY-MM-DD'] }`
-  — only the on/off shape (no hours); booking calendars grey those days out.
+- `GET ?action=availability` → `{ offWeekdays: [0..6], blockedDates: ['YYYY-MM-DD'], maxDaysAhead, hoursSummary }`
+  — the on/off shape plus the horizon (calendars grey those days out) and a
+  one-line hours summary such as `"Mon – Sat, 9 AM – 8 PM IST"` for the
+  booking page's sidebar (derived from the weekly template; `''` if every
+  day is off).
 - `GET ?date=YYYY-MM-DD&eventType={id}[&adminToken=…]` → `{ date, eventType, slots: [...] }`
   — with a valid admin token the minimum-notice window is skipped (used by
   the admin reschedule / book-for-client modals); hours, calendar clashes
@@ -93,7 +96,7 @@ path as a web booking minus Razorpay; row gets `source = admin`),
 enabled, windows } }`), `admin-upsert-date-override` (`date`, `enabled`,
 `windows`, `note`), `admin-delete-date-override` (`date`),
 `admin-get-settings`, `admin-save-settings` (`settings: { minNoticeHours,
-bufferMins }`),
+bufferMins, maxDaysAhead }`),
 `admin-list-event-types`, `admin-upsert-event-type` (`id`, `label`,
 `durationMins`, `pricePaise`, `active` — matches on `id`, so this both edits
 and creates), `admin-list-coupons`, `admin-upsert-coupon` (`code`,
@@ -158,15 +161,17 @@ dashboard edits two Sheet tabs:
   date override (`YYYY-MM-DD`: blocked, or custom hours for that date). A
   date row always wins over its weekday row.
 - `Settings` — `minNoticeHours` (default 4: no slot may start sooner than
-  this from "now") and `bufferMins` (default 10: padding before/after every
-  calendar event).
+  this from "now"), `bufferMins` (default 10: padding before/after every
+  calendar event) and `maxDaysAhead` (default 45: the booking horizon — no
+  public slot further out than this many calendar days).
 
 `buildSlots()` walks the day's ranges in 15-minute steps, requires the whole
 session to fit inside a range, clears the buffered calendar busy blocks, and
-applies the notice window. Because the booking-time re-check reuses the same
-function, what the picker shows is exactly what can be booked. Admin-initiated
-bookings and reschedules skip the notice window only. All three are cached
-60s, so edits go live within a minute — no redeploy.
+applies the notice window and the booking horizon. Because the booking-time
+re-check reuses the same function, what the picker shows is exactly what can
+be booked. Admin-initiated bookings and reschedules skip the notice window
+and the horizon. All three are cached 60s, so edits go live within a minute —
+no redeploy.
 
 The constants left in `Code.gs` (`DEFAULT_WINDOWS`, `MIN_NOTICE_HOURS`,
 `BUFFER_MINS`) are seed values used once by `initializeSheet()`.
