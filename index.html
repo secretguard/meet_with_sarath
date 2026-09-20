@@ -237,6 +237,7 @@
   .field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
   input[type="text"],input[type="email"],textarea{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
   input:focus,textarea:focus{border-color:var(--accent);}
+  input[readonly]{opacity:.7;cursor:not-allowed;}
   input::placeholder,textarea::placeholder{color:var(--muted);}
   textarea{resize:none;height:78px;line-height:1.6;}
 
@@ -569,7 +570,8 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   let EVENT_TYPES = {};
 
   const TOPIC_LABELS = {
-    'resume-review': 'What would you like feedback on?'
+    'resume-review': 'What would you like feedback on?',
+    'mentorship-intake': 'Anything you want me to know before the call? (optional)'
   };
   const DEFAULT_TOPIC_LABEL = 'What would you like to discuss?';
 
@@ -604,7 +606,35 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
 
   function pixelParamsFor(typeId, extra) {
     const t = EVENT_TYPES[typeId] || {};
-    return Object.assign({ content_name: t.label || typeId, content_ids: [typeId], content_type: 'product', value: Math.round((t.pricePaise || 0) / 100), currency: 'INR' }, extra || {});
+    const base = { content_name: t.label || typeId, content_ids: [typeId], content_type: 'product', value: Math.round((t.pricePaise || 0) / 100), currency: 'INR' };
+    if (t.gated) base.content_category = 'qualified-intake'; // booked after passing the /apply/ gate
+    return Object.assign(base, extra || {});
+  }
+
+  // ── QUALIFICATION GATE (/apply/) ─────────────────────────────────
+  // /apply/ leaves the visitor's identity (meetLead) and, if they said they're
+  // ready to invest, a server-issued gate token (meetGate) in localStorage —
+  // same origin, never in a URL. Gated session types need that token; the
+  // server enforces it, this side only routes people who lack it to /apply/.
+  function readStored(key) {
+    try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+  }
+  function readLead() { return readStored('meetLead'); }
+  function readGate() {
+    const g = readStored('meetGate');
+    return g && g.token && g.exp > Date.now() ? g : null;
+  }
+  // Prefills the details form for someone arriving from /apply/. The email is
+  // locked on a gated booking because the gate token is bound to it.
+  function prefillFromLead(locked) {
+    const lead = readLead();
+    if (!lead) return;
+    const nameParts = String(lead.name || '').trim().split(/\s+/);
+    const set = (id, v) => { const el = document.getElementById(id); if (el && !el.value && v) el.value = v; };
+    set('fname', nameParts[0]);
+    set('lname', nameParts.slice(1).join(' '));
+    set('email', lead.email);
+    if (locked) document.getElementById('email').readOnly = true;
   }
 
   // ── DESCRIPTION RENDERING ────────────────────────────────────────
@@ -739,7 +769,8 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
           price: Math.round(t.price / 100),   // rupees, display only
           pricePaise: t.price,                 // real unit, used for all logic
           description: (t.description && t.description.trim()) || autoDescription,
-          listed: t.listed !== false
+          listed: t.listed !== false,
+          gated: t.gated === true
         };
       });
 
@@ -747,8 +778,13 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
       renderTypeGrid();
 
       if (DEEP_LINK_TYPE && EVENT_TYPES[DEEP_LINK_TYPE]) {
+        const deepType = EVENT_TYPES[DEEP_LINK_TYPE];
+        // A gated session (the mentorship intake call) is only reachable
+        // through the /apply/ questions.
+        if (deepType.gated && !readGate()) { location.replace('/apply/'); return; }
         selectType(DEEP_LINK_TYPE);
         if (FOCUS_MODE) applyFocusHero(DEEP_LINK_TYPE);
+        prefillFromLead(deepType.gated);
       }
     } catch (err) {
       grid.className = 'type-grid error';
@@ -1100,7 +1136,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
 
     const lname = document.getElementById('lname').value.trim();
     const topic = document.getElementById('topic').value.trim();
-    return {
+    const payload = {
       date: dateKey(selDate),
       time: selSlot,
       name: (fname + ' ' + lname).trim(),
@@ -1109,6 +1145,24 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
       eventType: selectedType,
       clientTimezone: CLIENT_TZ   // IANA zone name, or null if detection failed
     };
+    // Gate token (gated types) / lead id (attributes a ₹499 booking to its lead)
+    if (EVENT_TYPES[selectedType].gated) {
+      const gate = readGate();
+      if (!gate) { sendBackToGate('Your application has expired — please complete it again.'); return null; }
+      payload.gateToken = gate.token;
+      payload.leadId = gate.leadId;
+    } else {
+      const lead = readLead();
+      if (lead && lead.leadId) payload.leadId = lead.leadId;
+    }
+    return payload;
+  }
+
+  function sendBackToGate(message) {
+    try { localStorage.removeItem('meetGate'); } catch (e) {}
+    showError(message);
+    setSubmitLoading(false);
+    setTimeout(() => { location.href = '/apply/'; }, 2500);
   }
 
   // ── SUBMIT: routes to free booking or paid (Razorpay) flow ───
@@ -1142,6 +1196,8 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
         showSuccess(payload, data.eventId);
       } else if (data.code === 'SLOT_TAKEN') {
         handleSlotTaken(data.error);
+      } else if (data.code === 'GATE_REQUIRED') {
+        sendBackToGate(data.error || 'Please complete the short application first.');
       } else {
         showError(data.error || 'Something went wrong. Please try again.');
         setSubmitLoading(false);
@@ -1241,11 +1297,12 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     const paidRupees = Math.round(getEffectivePricePaise() / 100);
     if (paidRupees > 0) {
       fbTrack('Purchase', pixelParamsFor(payload.eventType, { value: paidRupees, order_id: eventId }));
-      gaTrack('purchase', { transaction_id: eventId, currency: 'INR', value: paidRupees, coupon: appliedCoupon ? appliedCoupon.code : undefined, items: [gaItemFor(payload.eventType, paidRupees)] });
+      gaTrack('purchase', { transaction_id: eventId, currency: 'INR', value: paidRupees, lead_id: payload.leadId, coupon: appliedCoupon ? appliedCoupon.code : undefined, items: [gaItemFor(payload.eventType, paidRupees)] });
     } else {
       fbTrack('Lead', pixelParamsFor(payload.eventType, { value: 0 }));
-      gaTrack('generate_lead', { currency: 'INR', value: 0, items: [gaItemFor(payload.eventType, 0)] });
+      gaTrack('generate_lead', { currency: 'INR', value: 0, lead_source: (EVENT_TYPES[payload.eventType] || {}).gated ? 'apply-gate' : 'direct', lead_id: payload.leadId, items: [gaItemFor(payload.eventType, 0)] });
     }
+    try { if (typeof clarity === 'function') clarity('event', 'booking_confirmed'); } catch (e) {}
     document.getElementById('rightPanel').style.display = 'none';
     const sc = document.getElementById('successScreen');
     sc.classList.add('show');
@@ -1267,6 +1324,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     document.getElementById('fname').value = '';
     document.getElementById('lname').value = '';
     document.getElementById('email').value = '';
+    document.getElementById('email').readOnly = false;
     document.getElementById('topic').value = '';
     document.getElementById('successScreen').classList.remove('show');
     document.getElementById('rightPanel').style.display = 'flex';

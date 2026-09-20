@@ -17,7 +17,8 @@ dashboard for current pricing.
 
 - **Front end** (this repo, static HTML/CSS/JS) — `index.html` (the booking
   scheduler, served at the site root), `cancel/index.html`, `reschedule/index.html`,
-  `admin/index.html` (password-gated dashboard). Every page is reachable
+  `admin/index.html` (password-gated dashboard), `apply/index.html` (the
+  mentorship qualification gate, see below). Every page is reachable
   without a `.html` extension (`/`, `/cancel/`, `/reschedule/`, `/admin/`)
   using plain folders with `index.html` inside — no Jekyll, no build step, no
   framework, no dependencies beyond Google Fonts and (for paid bookings)
@@ -32,7 +33,7 @@ dashboard for current pricing.
   that has no reason to be public. Keep your own copy of it locally (outside
   this repo) and deploy it from there — see [SETUP.md](SETUP.md).
 - **Data store** — a Google Sheet (see [SETUP.md](SETUP.md) for the ID and
-  one-time setup). Five tabs: `Bookings` (a log of every booking, updated on
+  one-time setup). Six tabs: `Leads` (answers from the `/apply/` gate), `Bookings` (a log of every booking, updated on
   cancel/reschedule/no-show/attended), `EventTypes` (the live session-type
   catalogue — what the booking page and backend both read), `Coupons`,
   `Availability` (weekly hours + date overrides) and `Settings` (minimum
@@ -53,7 +54,7 @@ in sync with your local `Code.gs`:
 
 - `GET ?action=event-types` → `{ eventTypes: [{ id, label, duration, price, active, description, listed }, ...] }`
   — read live from the `EventTypes` sheet (active types only, including
-  unlisted ones with `listed: false`); `index.html` fetches this on load
+  unlisted ones with `listed: false`; `gated: true` marks types that need a gate token); `index.html` fetches this on load
   instead of hardcoding the catalogue, so a price/label change made in the
   admin dashboard shows up on the booking page without a redeploy.
 - `GET ?action=availability` → `{ offWeekdays: [0..6], blockedDates: ['YYYY-MM-DD'], maxDaysAhead, hoursSummary }`
@@ -76,6 +77,9 @@ in sync with your local `Code.gs`:
   (payment fields are required unless the *effective* price — after any
   coupon — is 0; a coupon's usage is only consumed here, on a completed
   booking, never on validate-coupon or create-order)
+- `POST { action: 'submit-qualification', name, email, background, bottleneck, goal, commit, utm{}, referrer, website }`
+  → `{ success, outcome: 'book-intake'|'assess'|'free-resources', leadId, gateToken?, expiresAt?, emailed? }` or `{ error }`
+  — the `/apply/` gate; `website` is a honeypot. See the gate section below.
 - `POST { action: 'cancel', eventId, email }` → `{ success: true }` or `{ error }`
 - `POST { action: 'reschedule', eventId, email, newDate, newTime }` → `{ success: true, eventId }` or `{ error }`
 
@@ -97,7 +101,7 @@ enabled, windows } }`), `admin-upsert-date-override` (`date`, `enabled`,
 `windows`, `note`), `admin-delete-date-override` (`date`),
 `admin-get-settings`, `admin-save-settings` (`settings: { minNoticeHours,
 bufferMins, maxDaysAhead }`),
-`admin-list-event-types`, `admin-upsert-event-type` (`id`, `label`,
+`admin-list-leads` (newest first), `admin-list-event-types`, `admin-upsert-event-type` (`id`, `label`,
 `durationMins`, `pricePaise`, `active` — matches on `id`, so this both edits
 and creates), `admin-list-coupons`, `admin-upsert-coupon` (`code`,
 `discountType`, `discountValue`, `usageType`, `maxUses`, `active`, `expiry` —
@@ -136,6 +140,32 @@ sessions are hidden from the home-page menu but work through their direct
 link — for ad-only, coupon-priced, or audience-specific offers. The admin
 form shows both links after you add a type.
 
+## Mentorship qualification gate (`/apply/`)
+
+A separate landing page for the 1:1 mentorship ad — **not** the default booking
+page. The clicker answers four single-select questions (technical background,
+bottleneck, 30–90-day goal, financial readiness) plus name/email before any calendar appears. The last
+answer routes them:
+
+| Answer | Outcome |
+|---|---|
+| A — ready to invest if a good fit | Calendar for the hidden, free 15-min **1:1 Career Diagnostic Call** (`/?type=mentorship-intake&focus=1`); booking sends the diagnostic confirmation email |
+| B — ₹499 Job Readiness Check first | The existing paid Job Readiness Check focus landing |
+| C — free self-study only | No calendar; a free-resources page (Foundation Hub `sarathg.me/start`, `labs.sarathg.me`, `gethired.sarathg.me`) + one automated email with the same links |
+
+The intake call is a normal event type (`mentorship-intake`, unlisted) that the
+backend lists in `GATED_EVENT_TYPES`; booking it requires a signed, 72-hour gate
+token issued to the same email by `submit-qualification` — enforced server-side,
+so the hidden URL alone is not enough. Identity and token pass from `/apply/` to the
+booking page through `localStorage` (never the URL). Answers are stored in the
+`Leads` tab, appended to the booking's topic as a `[Screening]` line, and shown in
+admin → **Leads**; a lead's later booking is joined back to it by `leadId`.
+Abuse controls: honeypot, 5 submits/hour per email, one automated email per address
+per 24 h, 50 automated emails/day overall. Design:
+[docs/superpowers/specs/2026-09-21-mentorship-qualification-gate-design.md](docs/superpowers/specs/2026-09-21-mentorship-qualification-gate-design.md).
+
+Ad URL: `https://meet.sarathg.me/apply/?utm_source=ig&utm_medium=paid&utm_campaign=<name>&utm_content=<creative>`.
+
 ## Analytics
 
 `index.html` carries GA4, Microsoft Clarity and the **Meta Pixel**
@@ -148,7 +178,13 @@ four moments are sent to GA4 in ecommerce vocabulary — `view_item`,
 `begin_checkout`, `purchase` (with `transaction_id` = calendar event id and
 value in INR) and `generate_lead` — so the booking funnel and conversions
 show up in GA4 reports; mark `purchase` and `generate_lead` as key events in
-GA4 admin. Ad links carry UTM parameters, which is how GA4 attributes paid
+GA4 admin. `/apply/` carries the same three tags and records every step: Pixel
+`ViewContent`, `SubmitApplication`, and custom `QualificationStart`,
+`QualificationAnswer` (question + option code), `QualifiedLead`,
+`AssessmentIntent`, `UnqualifiedLead`, `ResourceClick`; GA4
+`qualification_view/start/answer/error/submit`, `qualified_lead`,
+`assessment_intent`, `unqualified_lead`, `resource_click`; Clarity tags
+`lead_outcome` and events. Optimise the ad on `QualifiedLead`. Ad links carry UTM parameters, which is how GA4 attributes paid
 traffic to a campaign.
 
 ## Availability and booking rules — edited in the admin panel
@@ -242,7 +278,8 @@ meet-with-sarath/
   index.html             Main scheduler, served at the site root (4 session types → date → time → details → [payment] → confirmed)
   cancel/index.html       Cancel a booking via link from the confirmation email — served at /cancel/
   reschedule/index.html    Move a booking to a new date/time — served at /reschedule/
-  admin/index.html         Password-gated dashboard — bookings, event types, coupons — served at /admin/
+  admin/index.html         Password-gated dashboard — bookings, availability, leads, event types, coupons — served at /admin/
+  apply/index.html         Mentorship qualification gate for the 1:1 mentorship ad — served at /apply/ (noindex)
   config.js               Your real deployment values — gitignored, not committed
   config.example.js       Placeholder shape of config.js, committed
   .nojekyll                Empty file — tells GitHub Pages to skip Jekyll processing

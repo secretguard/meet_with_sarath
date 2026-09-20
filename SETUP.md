@@ -58,6 +58,7 @@ Final schema, for reference:
 |---|---|
 | `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent, source` |
 | `EventTypes` | `id, label, durationMins, pricePaise, active, description, listed` — `listed` blank/TRUE = shown on the home page; FALSE = link-only |
+| `Leads` | `leadId, createdAt, name, email, background, bottleneck, goal, commit, outcome, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, bookedEventId, bookedType, bookedAt` — written by the `/apply/` gate; auto-created |
 | `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
 | `Availability` | `key, enabled, windows, note` — `key` is `mon`..`sun` or `YYYY-MM-DD`; `windows` like `09:00-12:00, 14:00-20:00` (IST) |
 | `Settings` | `key, value` — `minNoticeHours`, `bufferMins`, `maxDaysAhead` |
@@ -143,6 +144,27 @@ All three functions already exist in `Code.gs` — this step just wires them
 up to run automatically. Without the first two, bookings still work but no
 reminder emails go out; without the third, marking a no-show still sends the
 immediate "we missed you" email, but the day-3 / day-7 nudges never fire.
+
+## 3b. Mentorship qualification gate (`/apply/`)
+
+After deploying the backend version that contains `submit-qualification`
+(deploy `Code.gs` **before** pushing the front end):
+
+1. In the Apps Script editor run **`ensureMentorshipIntakeType`** once. It creates
+   the hidden, free, 15-minute `mentorship-intake` session type (edit its label,
+   length and description in admin → Event Types afterwards; it never overwrites an
+   existing row). No new Script Property is needed — gate tokens are signed with a
+   key derived from `ADMIN_TOKEN`, so **changing `ADMIN_TOKEN` invalidates any
+   outstanding gate tokens** (applicants just re-apply).
+2. Check the automated emails read the way you want — the free-resources email
+   (`freeResourcesBody()`) and the qualified-booking confirmation
+   (`diagnosticConfirmedBody()`), both in `Code.gs`. The confirmation promises "a
+   Google Meet link" in the calendar invite: `getMeetLink()` currently returns
+   null (basic CalendarApp can't create Meet links), so book a test slot and confirm
+   your invite really contains one — if not, edit that sentence or add Meet-link
+   creation before running the ad.
+3. Test all three answers with a throwaway email, then point the ad at
+   `https://meet.sarathg.me/apply/?utm_source=…&utm_campaign=…`.
 
 ## 4. GitHub Pages for this repo
 

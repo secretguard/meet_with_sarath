@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  (function () {
+    var stored = localStorage.getItem('meetWithSarathTheme');
+    if (stored === 'light' || stored === 'dark') {
+      document.documentElement.setAttribute('data-theme', stored);
+    }
+  })();
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ML4GP9590F"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-ML4GP9590F');
+</script>
+<title>Apply for 1:1 Mentorship — Sarath G</title>
+<meta name="description" content="Four quick questions to see whether 1:1 mentorship with Sarath G is the right next step.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf8f5; --panel:#ffffff; --surface:#f4f1ec; --border:#e2ded6;
+    --text:#17191d; --muted:#5c6370; --accent:#8f6a30;
+    --accent-soft:#8f6a3014; --accent-dim:#8f6a3033;
+    --red:#bd3f34; --red-dim:#bd3f3433;
+    --btn-text:#ffffff; --btn-spinner-track:#ffffff4d;
+    --shadow:0 1px 2px #17191d08, 0 12px 32px #17191d0f;
+    --avatar-bg:#1c4d3a; --avatar-text:#cda868;
+    --serif:'Playfair Display', Georgia, serif;
+    --sans:'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0a0e14; --panel:#10161f; --surface:#161d29; --border:#232c3a;
+      --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+      --accent-soft:#cda86814; --accent-dim:#cda86833;
+      --red:#e0685c; --red-dim:#e0685c33;
+      --btn-text:#0a0e14; --btn-spinner-track:#0a0e144d;
+      --shadow:0 0 0 1px #ffffff0d, 0 16px 40px #00000066;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0e14; --panel:#10161f; --surface:#161d29; --border:#232c3a;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+    --accent-soft:#cda86814; --accent-dim:#cda86833;
+    --red:#e0685c; --red-dim:#e0685c33;
+    --btn-text:#0a0e14; --btn-spinner-track:#0a0e144d;
+    --shadow:0 0 0 1px #ffffff0d, 0 16px 40px #00000066;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background-color .2s,color .2s;}
+  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:64px 24px;}
+
+  .theme-toggle{position:fixed;top:22px;right:22px;z-index:40;width:38px;height:38px;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,color .2s,transform .15s;box-shadow:var(--shadow);}
+  .theme-toggle:hover{color:var(--accent);border-color:var(--accent-dim);transform:scale(1.05);}
+  .theme-toggle svg{width:17px;height:17px;}
+
+  .card{width:100%;max-width:900px;display:flex;background:var(--panel);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .5s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+  .left{width:270px;flex-shrink:0;border-right:1px solid var(--border);padding:44px 32px;display:flex;flex-direction:column;gap:28px;}
+  .avatar{width:50px;height:50px;border-radius:50%;background:var(--avatar-bg);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:18px;font-weight:600;color:var(--avatar-text);flex-shrink:0;}
+  .host-name{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--text);line-height:1.15;margin-bottom:4px;}
+  .host-role{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .divider{height:1px;background:var(--border);}
+  .pitch{font-size:15px;color:var(--muted);line-height:1.7;}
+  .pitch p{margin:0 0 10px;}
+  .pitch p:last-child{margin-bottom:0;}
+
+  .right{flex:1;padding:44px 40px;min-width:0;}
+  .kicker{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+  .title{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--text);line-height:1.2;margin:0 0 6px;}
+  .lede{font-size:14px;color:var(--muted);margin-bottom:26px;}
+
+  fieldset.q{border:none;margin:0 0 26px;min-width:0;}
+  fieldset.q legend{display:flex;gap:10px;align-items:flex-start;padding:0;margin-bottom:12px;font-size:15px;font-weight:500;color:var(--text);line-height:1.45;}
+  .q-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);flex-shrink:0;margin-top:1px;font-weight:400;}
+  .q-help{font-size:13px;color:var(--muted);margin:-4px 0 12px 32px;line-height:1.55;}
+  .opts{display:flex;flex-wrap:wrap;gap:9px;margin-left:32px;}
+  .opts.stack{flex-direction:column;}
+  .opt{position:relative;display:block;}
+  .opt input{position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;margin:0;cursor:pointer;}
+  .opt span{display:flex;align-items:center;gap:10px;min-height:44px;padding:10px 16px;border:1px solid var(--border);border-radius:9px;background:var(--surface);font-size:14px;color:var(--muted);transition:all .15s;line-height:1.4;}
+  .opt span::before{content:'';width:16px;height:16px;flex-shrink:0;border:1.5px solid var(--border);background:var(--panel);transition:all .15s;}
+  .opt.radio span::before{border-radius:50%;}
+  .opt.check span::before{border-radius:4px;}
+  .opt:hover span{border-color:var(--accent-dim);color:var(--text);}
+  .opt input:checked + span{border-color:var(--accent);background:var(--accent-soft);color:var(--text);}
+  .opt input:checked + span::before{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--panel);}
+  .opt input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px;}
+  fieldset.q.invalid legend{color:var(--red);}
+  fieldset.q.invalid .opt span{border-color:var(--red-dim);}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px 0;padding-top:24px;border-top:1px solid var(--border);}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  input[type="text"],input[type="email"]{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
+  input[type="text"]:focus,input[type="email"]:focus{border-color:var(--accent);}
+  input::placeholder{color:var(--muted);}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
+  .submit-btn{width:100%;margin-top:18px;min-height:48px;padding:14px;background:var(--accent);border:none;border-radius:9px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--btn-text);font-family:var(--sans);font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .submit-btn:hover{opacity:.88;}
+  .submit-btn:active{transform:scale(.99);}
+  .submit-btn:disabled{opacity:.35;cursor:default;}
+  .btn-spinner{width:13px;height:13px;border:1.5px solid var(--btn-spinner-track);border-top-color:var(--btn-text);border-radius:50%;animation:spin .7s linear infinite;display:none;}
+  .submit-btn.loading .btn-spinner{display:block;}
+  .submit-btn.loading .btn-text{opacity:.6;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-msg{display:none;font-size:13px;color:var(--red);padding:11px 14px;border:1px solid var(--red-dim);border-radius:8px;background:var(--red-dim);margin-top:14px;}
+  .error-msg.show{display:block;}
+  .fineprint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.6;}
+  .fineprint a{color:var(--muted);}
+
+  .result{display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:64px 44px;min-height:340px;animation:fadeUp .5s ease both;flex:1;}
+  .result.show{display:flex;}
+  .result-check{width:54px;height:54px;border-radius:50%;border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;}
+  .result-check svg{color:var(--accent);width:23px;height:23px;}
+  .result-title{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--text);line-height:1.2;}
+  .result-body{font-size:15px;color:var(--muted);line-height:1.8;max-width:420px;}
+  .result-body a{color:var(--accent);font-weight:500;}
+  .result-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .result-links a,.result-links button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:11px 22px;border:1px solid var(--border);border-radius:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text);text-decoration:none;background:none;font-family:var(--sans);cursor:pointer;transition:border-color .2s,color .2s;}
+  .result-links a:hover{border-color:var(--accent);color:var(--accent);}
+  .res-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:460px;text-align:left;}
+  .res-item{display:block;padding:14px 18px;border:1px solid var(--border);border-radius:10px;background:var(--surface);text-decoration:none;color:var(--muted);font-size:13.5px;line-height:1.5;transition:border-color .2s;}
+  .res-item strong{display:block;color:var(--text);font-size:14.5px;font-weight:500;margin-bottom:2px;}
+  .res-item:hover{border-color:var(--accent);}
+  .res-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .card.done .left,.card.done .right{display:none;}
+
+  @media (max-width:680px){
+    .page{padding:52px 16px;}
+    .card{flex-direction:column;}
+    .left{width:100%;flex-direction:row;align-items:center;gap:14px;padding:18px 24px;border-right:none;border-bottom:1px solid var(--border);}
+    .left .avatar{width:42px;height:42px;}
+    .left .host-name{font-size:17px;margin-bottom:2px;}
+    .left .divider,.left .pitch{display:none;}
+    .right{padding:28px 22px;}
+    .opts{margin-left:0;}
+    .q-help{margin-left:0;}
+    .form-grid{grid-template-columns:1fr;}
+    .theme-toggle{top:14px;right:14px;}
+    .result{padding:44px 24px;}
+  }
+</style>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "yet1lzjxmr");
+</script>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1131377436123001');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Switch theme">
+  <svg id="themeToggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></svg>
+</button>
+
+<main>
+<div class="page">
+  <div class="card" id="card">
+
+    <div class="left">
+      <div class="avatar"><img src="../assets/profile.jpg" alt="Sarath G" style="width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:center;" onerror="this.outerHTML='SG'"></div>
+      <div>
+        <div class="host-name">Sarath G</div>
+        <div class="host-role">Cyber Security Consultant</div>
+      </div>
+      <div class="divider"></div>
+      <div class="pitch">
+        <p>1:1 mentorship is a personalised, high-touch programme for people making a serious move into offensive security and application security.</p>
+        <p>These four questions help me decide whether a call is the right next step for you.</p>
+      </div>
+    </div>
+
+    <div class="right" id="formPanel">
+      <div class="kicker">1:1 Mentorship · Application</div>
+      <h1 class="title">Four quick questions</h1>
+      <p class="lede">Takes about a minute. Then you'll see what happens next.</p>
+
+      <form id="applyForm" novalidate onsubmit="return false;">
+
+        <fieldset class="q" id="q-background">
+          <legend><span class="q-num">1</span><span>What best describes your current technical background?</span></legend>
+          <div class="opts stack">
+            <label class="opt radio"><input type="radio" name="background" value="certified"><span>Certified (CEH / Security+ / CPENT / OSCP / etc.)</span></label>
+            <label class="opt radio"><input type="radio" name="background" value="it-shift"><span>IT / SysAdmin / Developer wanting to shift to Offensive Security / AppSec</span></label>
+            <label class="opt radio"><input type="radio" name="background" value="fresher"><span>Cybersecurity Fresher / Final Year Student</span></label>
+            <label class="opt radio"><input type="radio" name="background" value="beginner"><span>Complete beginner with no technical background</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="q" id="q-bottleneck">
+          <legend><span class="q-num">2</span><span>Where are you getting stuck when facing live targets or technical interviews?</span></legend>
+          <div class="opts stack">
+            <label class="opt radio"><input type="radio" name="bottleneck" value="freezing-labs"><span>Freezing on live target/lab assessments despite knowing theory</span></label>
+            <label class="opt radio"><input type="radio" name="bottleneck" value="no-workflow"><span>Unsure how an actual end-to-end VAPT engagement works</span></label>
+            <label class="opt radio"><input type="radio" name="bottleneck" value="reports"><span>Don't know how to write professional, client-ready security reports</span></label>
+            <label class="opt radio"><input type="radio" name="bottleneck" value="rejected-screening"><span>Getting rejected at the initial resume screening stage</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="q" id="q-goal">
+          <legend><span class="q-num">3</span><span>Are you actively aiming to secure a practical AppSec/Pentesting role in the next 30–90 days?</span></legend>
+          <div class="opts stack">
+            <label class="opt radio"><input type="radio" name="goal" value="yes"><span>Yes, this is my top career priority right now.</span></label>
+            <label class="opt radio"><input type="radio" name="goal" value="no"><span>No, just casually exploring for the future.</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="q" id="q-commit">
+          <legend><span class="q-num">4</span><span>My 1:1 mentorship is a personalised, high-touch execution programme that requires a financial investment. Which option best fits you today?</span></legend>
+          <div class="opts stack">
+            <label class="opt radio"><input type="radio" name="commit" value="invest"><span>I am ready to invest in 1:1 mentorship if we are a good fit.</span></label>
+            <label class="opt radio"><input type="radio" name="commit" value="assess"><span>I want to start with a ₹499 Job Readiness Check (30-min lab/resume assessment).</span></label>
+            <label class="opt radio"><input type="radio" name="commit" value="free"><span>I am currently looking for free self-study resources only.</span></label>
+          </div>
+        </fieldset>
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="fname">Your name</label>
+            <input type="text" id="fname" placeholder="Full name" autocomplete="name">
+          </div>
+          <div class="field">
+            <label class="field-label" for="email">Email address</label>
+            <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="website">Leave this field empty</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="error-msg" id="errorMsg" role="alert"></div>
+        <button type="button" class="submit-btn" id="submitBtn" onclick="handleSubmit()">
+          <span class="btn-text">Continue</span>
+          <div class="btn-spinner"></div>
+        </button>
+        <div class="fineprint">We'll use your answers and email only to respond to this application. <a href="https://sarathg.me/privacy/" target="_blank" rel="noopener">Privacy</a></div>
+      </form>
+    </div>
+
+    <!-- RESULT: routing to a calendar -->
+    <div class="result" id="resGo">
+      <div class="result-check"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="result-title" id="goTitle">Thanks — opening the calendar…</div>
+      <div class="result-body" id="goBody">One moment.</div>
+      <div class="result-links"><a id="goLink" href="/">Continue</a></div>
+    </div>
+
+    <!-- RESULT: free resources only -->
+    <div class="result" id="resFree">
+      <div class="result-check"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="result-title">Your free self-study kit</div>
+      <div class="result-body">Jumping straight into 1:1 mentorship isn't necessary if you're focusing on self-study right now. Start with these three — and <span id="emailedNote">apply again</span> whenever you're ready to fast-track with structured 1:1 mentorship.</div>
+      <div class="res-list">
+        <a class="res-item" href="https://sarathg.me/start" target="_blank" rel="noopener" data-resource="start"><strong>1. Start Here — The Foundation Hub</strong><span>A roadmap from certification theory to practical target mastery.</span></a>
+        <a class="res-item" href="https://labs.sarathg.me" target="_blank" rel="noopener" data-resource="labs"><strong>2. Free Open-Source Security Labs</strong><span>Practice API testing, BOLA/JWT flaws and SOC detection on live targets.</span></a>
+        <a class="res-item" href="https://gethired.sarathg.me" target="_blank" rel="noopener" data-resource="gethired"><strong>3. GetHired Career Readiness Tool</strong><span>Run your resume against real job descriptions and see your skill gaps.</span></a>
+      </div>
+    </div>
+
+  </div>
+</div>
+</main>
+
+<script src="/config.js?v=20260918"></script>
+<script>
+  // ── THEME TOGGLE ─────────────────────────────────────────────
+  const THEME_KEY = 'meetWithSarathTheme';
+  const SUN_PATH = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+  const MOON_PATH = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  function getCurrentTheme() {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function syncThemeToggleUI(theme) {
+    const btn = document.getElementById('themeToggle'), icon = document.getElementById('themeToggleIcon');
+    if (!btn || !icon) return;
+    icon.innerHTML = theme === 'dark' ? SUN_PATH : MOON_PATH;
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  }
+  function toggleTheme() {
+    const next = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    document.documentElement.setAttribute('data-theme', next);
+    syncThemeToggleUI(next);
+  }
+  syncThemeToggleUI(getCurrentTheme());
+
+  // ── TRACKING ─────────────────────────────────────────────────
+  // Every step of an ad click is recorded in all three tools so the funnel
+  // can be read (GA4), watched (Clarity) and optimised on (Meta). All wrappers
+  // are no-ops if the tag is blocked. Answers are non-personal option codes;
+  // name and email are never sent as event parameters.
+  //   Meta standard : PageView, ViewContent, SubmitApplication
+  //   Meta custom   : QualificationStart, QualificationAnswer, QualifiedLead,
+  //                   AssessmentIntent, UnqualifiedLead, ResourceClick
+  //   GA4           : qualification_view / _start / _answer / _error / _submit,
+  //                   qualified_lead, assessment_intent, unqualified_lead, resource_click
+  function fbStd(name, params) { try { if (window.fbq) fbq('track', name, params || {}); } catch (e) {} }
+  function fbCustom(name, params) { try { if (window.fbq) fbq('trackCustom', name, params || {}); } catch (e) {} }
+  function gaTrack(name, params) { try { if (typeof gtag === 'function') gtag('event', name, params || {}); } catch (e) {} }
+  function clSet(k, v) { try { if (typeof clarity === 'function') clarity('set', k, v); } catch (e) {} }
+  function clEvent(name) { try { if (typeof clarity === 'function') clarity('event', name); } catch (e) {} }
+
+  const UTM = (function () {
+    const p = new URLSearchParams(location.search), out = {};
+    ['source', 'medium', 'campaign', 'content', 'term'].forEach(k => { const v = p.get('utm_' + k); if (v) out[k] = v; });
+    if (Object.keys(out).length) { try { sessionStorage.setItem('meetUtm', JSON.stringify(out)); } catch (e) {} return out; }
+    try { return JSON.parse(sessionStorage.getItem('meetUtm') || '{}'); } catch (e) { return {}; }
+  })();
+
+  fbStd('ViewContent', { content_name: 'Mentorship application', content_category: 'qualification-gate' });
+  gaTrack('qualification_view', { page: 'apply' });
+
+  let started = false;
+  function markStarted(via) {
+    if (started) return;
+    started = true;
+    fbCustom('QualificationStart', { via });
+    gaTrack('qualification_start', { via });
+    clEvent('qualification_start');
+  }
+
+  // ── FORM ─────────────────────────────────────────────────────
+  const form = document.getElementById('applyForm');
+  const QUESTION_KEY = { background: 'q1_background', bottleneck: 'q2_bottleneck', goal: 'q3_goal', commit: 'q4_commit' };
+
+  function checkedValue(name) {
+    const el = form.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+  }
+
+  form.addEventListener('change', (e) => {
+    const t = e.target;
+    if (!t || t.tagName !== 'INPUT' || !QUESTION_KEY[t.name]) return;
+    markStarted(t.name);
+    document.getElementById('q-' + t.name).classList.remove('invalid');
+    fbCustom('QualificationAnswer', { question: QUESTION_KEY[t.name], answer: t.value });
+    gaTrack('qualification_answer', { question: QUESTION_KEY[t.name], answer: t.value });
+  });
+  form.addEventListener('focusin', (e) => { if (e.target && (e.target.id === 'fname' || e.target.id === 'email')) markStarted(e.target.id); });
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+  function clearError() { document.getElementById('errorMsg').classList.remove('show'); }
+  function setLoading(on) {
+    const btn = document.getElementById('submitBtn');
+    btn.classList.toggle('loading', on);
+    btn.disabled = on;
+  }
+
+  function collect() {
+    return {
+      name: document.getElementById('fname').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      background: checkedValue('background'),
+      bottleneck: checkedValue('bottleneck'),
+      goal: checkedValue('goal'),
+      commit: checkedValue('commit')
+    };
+  }
+
+  function validate(a) {
+    const missing = [];
+    if (!a.background) missing.push('background');
+    if (!a.bottleneck) missing.push('bottleneck');
+    if (!a.goal) missing.push('goal');
+    if (!a.commit) missing.push('commit');
+    Object.keys(QUESTION_KEY).forEach(k => document.getElementById('q-' + k).classList.toggle('invalid', missing.indexOf(k) !== -1));
+    if (missing.length) { showError('Please answer all four questions.'); document.getElementById('q-' + missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' }); return 'questions:' + missing.join('+'); }
+    if (!a.name) { showError('Please enter your name.'); document.getElementById('fname').focus(); return 'name'; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email)) { showError('Please enter a valid email address.'); document.getElementById('email').focus(); return 'email'; }
+    return null;
+  }
+
+  async function handleSubmit() {
+    clearError();
+    const a = collect();
+    const bad = validate(a);
+    if (bad) { gaTrack('qualification_error', { reason: 'validation', detail: bad }); return; }
+
+    setLoading(true);
+    let data;
+    try {
+      const res = await fetch(CONFIG.API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'submit-qualification',
+          name: a.name, email: a.email, background: a.background, bottleneck: a.bottleneck, goal: a.goal, commit: a.commit,
+          utm: UTM, referrer: document.referrer || '',
+          website: document.getElementById('website').value
+        })
+      });
+      data = await res.json();
+    } catch (err) {
+      setLoading(false);
+      showError('Network error. Please check your connection and try again.');
+      gaTrack('qualification_error', { reason: 'network' });
+      return;
+    }
+    if (!data || !data.success) {
+      setLoading(false);
+      showError((data && data.error) || 'Something went wrong. Please try again.');
+      gaTrack('qualification_error', { reason: 'server', detail: ((data && data.error) || '').slice(0, 60) });
+      return;
+    }
+
+    // Accepted — record the outcome everywhere, then route.
+    const outcome = data.outcome;
+    const common = { outcome, background: a.background, bottleneck: a.bottleneck, goal: a.goal };
+    fbStd('SubmitApplication', { content_name: 'Mentorship application', outcome });
+    gaTrack('qualification_submit', Object.assign({ lead_id: data.leadId }, common));
+    clSet('lead_outcome', outcome);
+    clSet('lead_bottleneck', a.bottleneck);
+    clEvent('qualification_submit');
+    if (outcome === 'book-intake') {
+      fbCustom('QualifiedLead', common);
+      gaTrack('qualified_lead', Object.assign({ lead_id: data.leadId }, common));
+    } else if (outcome === 'assess') {
+      fbCustom('AssessmentIntent', common);
+      gaTrack('assessment_intent', Object.assign({ lead_id: data.leadId }, common));
+    } else {
+      fbCustom('UnqualifiedLead', common);
+      gaTrack('unqualified_lead', Object.assign({ lead_id: data.leadId }, common));
+    }
+
+    // Hand the identity + gate to the booking page through localStorage
+    // (same origin) — never through the URL.
+    try {
+      localStorage.setItem('meetLead', JSON.stringify({ leadId: data.leadId, name: a.name, email: a.email, outcome }));
+      if (data.gateToken) localStorage.setItem('meetGate', JSON.stringify({ token: data.gateToken, exp: data.expiresAt, leadId: data.leadId }));
+    } catch (e) {}
+
+    const card = document.getElementById('card');
+    card.classList.add('done');
+    if (outcome === 'free-resources') {
+      // "I'm also emailing you this list" only if the backend actually sent it
+      document.getElementById('emailedNote').textContent = data.emailed ? "I've also emailed you this kit. Apply again" : 'apply again';
+      document.getElementById('resFree').classList.add('show');
+      return;
+    }
+    const target = outcome === 'book-intake' ? '/?type=mentorship-intake&focus=1' : '/?type=job-readiness-check&focus=1';
+    document.getElementById('goTitle').textContent = outcome === 'book-intake' ? "You're through — pick a time." : 'Good choice — book your assessment.';
+    document.getElementById('goBody').textContent = outcome === 'book-intake'
+      ? 'Opening the calendar for your intake call…'
+      : 'Opening the calendar for the ₹499 Job Readiness Check…';
+    document.getElementById('goLink').href = target;
+    document.getElementById('resGo').classList.add('show');
+    // small delay so the Pixel/GA beacons leave before the page unloads
+    setTimeout(() => { location.href = target; }, 500);
+  }
+
+  document.querySelectorAll('#resFree a[data-resource]').forEach(a => a.addEventListener('click', () => {
+    const resource = a.getAttribute('data-resource');
+    fbCustom('ResourceClick', { resource });
+    gaTrack('resource_click', { resource, page: 'apply' });
+  }));
+  form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'radio') handleSubmit(); });
+
+  // Returning applicant: prefill the identity fields
+  try {
+    const lead = JSON.parse(localStorage.getItem('meetLead') || 'null');
+    if (lead) {
+      if (lead.name) document.getElementById('fname').value = lead.name;
+      if (lead.email) document.getElementById('email').value = lead.email;
+    }
+  } catch (e) {}
+</script>
+</body>
+</html>

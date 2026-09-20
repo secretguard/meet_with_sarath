@@ -374,6 +374,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="bookings" onclick="switchTab('bookings')">Bookings</button>
     <button class="tab-btn" data-tab="availability" onclick="switchTab('availability')">Availability</button>
+    <button class="tab-btn" data-tab="leads" onclick="switchTab('leads')">Leads</button>
     <button class="tab-btn" data-tab="eventtypes" onclick="switchTab('eventtypes')">Event Types</button>
     <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')">Coupons</button>
   </div>
@@ -534,6 +535,35 @@
         <summary><span id="etRetiredLabel">Retired</span></summary>
         <div class="et-list" id="etRetiredList"></div>
       </details>
+    </div>
+  </div>
+
+  <!-- LEADS TAB — /apply/ mentorship qualification gate -->
+  <div class="tab-panel" id="tab-leads">
+    <div class="panel">
+      <div class="toolbar">
+        <h2>Leads from /apply/</h2>
+        <div class="toolbar-actions">
+          <select id="leadsOutcomeFilter" onchange="renderLeads()" aria-label="Filter by outcome" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--text);font-family:var(--sans);">
+            <option value="">All outcomes</option>
+            <option value="book-intake">Ready to invest</option>
+            <option value="assess">₹499 assessment</option>
+            <option value="free-resources">Free resources only</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="loadLeads()">Refresh</button>
+        </div>
+      </div>
+      <div class="stats" id="leadsStrip"></div>
+      <div class="table-wrap">
+        <table id="leadsTable">
+          <thead>
+            <tr><th>Lead</th><th>Background</th><th>Stuck on</th><th>Role in 30–90d</th><th>Outcome</th><th>Source</th><th>Booked</th></tr>
+          </thead>
+          <tbody id="leadsBody">
+            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -760,6 +790,7 @@
     if (!monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
     loadEventTypesTab();
     loadCoupons();
+    loadLeads();
     loadBookings();
     loadStats();
     loadClosedDays();
@@ -1740,6 +1771,72 @@
       closeNewEventType();
       await loadEventTypesTab();
     } catch (err) {}
+  }
+
+  // ============================================================
+  // LEADS TAB (/apply/ qualification gate)
+  // ============================================================
+  const LEAD_LABELS = {
+    'certified': 'Certified', 'it-shift': 'IT / Dev shifting', 'fresher': 'Fresher / student', 'beginner': 'Complete beginner',
+    'freezing-labs': 'Freezes on live targets', 'no-workflow': 'Unsure of VAPT workflow', 'reports': "Can't write reports", 'rejected-screening': 'Rejected at resume screen',
+    'yes': 'Yes — top priority', 'no': 'Casually exploring'
+  };
+  const LEAD_OUTCOMES = {
+    'book-intake': { label: 'Ready to invest', cls: 'badge-active' },
+    'assess': { label: '₹499 assessment', cls: 'badge-confirmed' },
+    'free-resources': { label: 'Free only', cls: 'badge-inactive' }
+  };
+  let leadsData = [];
+  let leadsReqId = 0; // same stale-response guard as bookingsReqId
+
+  async function loadLeads() {
+    const reqId = ++leadsReqId;
+    const body = document.getElementById('leadsBody');
+    body.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
+    try {
+      const data = await adminFetch('admin-list-leads');
+      if (reqId !== leadsReqId) return;
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="7">${esc(data.error)}</td></tr>`; return; }
+      leadsData = data.leads || [];
+      renderLeads();
+    } catch (err) {
+      if (reqId === leadsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load leads. Please try again.</td></tr>';
+    }
+  }
+
+  function renderLeads() {
+    const body = document.getElementById('leadsBody');
+    const strip = document.getElementById('leadsStrip');
+    const count = o => leadsData.filter(l => l.outcome === o).length;
+    const booked = leadsData.filter(l => l.bookedEventId).length;
+    strip.innerHTML = [
+      ['Applications', leadsData.length],
+      ['Ready to invest', count('book-intake')],
+      ['₹499 assessment', count('assess')],
+      ['Free only', count('free-resources')],
+      ['Booked', booked]
+    ].map(([k, v]) => `<div class="stat"><div class="stat-label">${k}</div><div class="stat-value">${v}</div></div>`).join('');
+
+    const filter = document.getElementById('leadsOutcomeFilter').value;
+    const rows = leadsData.filter(l => !filter || l.outcome === filter);
+    if (!rows.length) { body.innerHTML = '<tr class="empty-row"><td colspan="7">No leads yet.</td></tr>'; return; }
+    const lab = c => LEAD_LABELS[c] || c;
+    body.innerHTML = rows.map(l => {
+      const oc = LEAD_OUTCOMES[l.outcome] || { label: l.outcome, cls: 'badge-inactive' };
+      const src = [l.utmSource, l.utmCampaign].filter(Boolean).join(' · ') || '—';
+      const bookedTxt = l.bookedEventId
+        ? `<span class="badge badge-completed">Booked</span><div class="cell-secondary">${esc(((currentEventTypes.find(t => t.id === l.bookedType) || {}).label) || l.bookedType)}</div>`
+        : '—';
+      return `<tr>
+        <td data-label="Lead"><div class="cell-stack"><span class="cell-primary">${esc(l.name)}</span><span class="cell-secondary">${esc(l.email)}</span><span class="cell-tertiary">${formatCreatedAt(l.createdAt)}</span></div></td>
+        <td data-label="Background">${esc(lab(l.background))}</td>
+        <td data-label="Stuck on">${esc(lab(l.bottleneck))}</td>
+        <td data-label="Role in 30–90d">${esc(lab(l.goal))}</td>
+        <td data-label="Outcome"><span class="badge ${oc.cls}">${esc(oc.label)}</span></td>
+        <td data-label="Source">${esc(src)}</td>
+        <td data-label="Booked">${bookedTxt}</td>
+      </tr>`;
+    }).join('');
   }
 
   // ============================================================
