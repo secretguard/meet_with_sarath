@@ -116,9 +116,17 @@
 
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px 0;padding-top:24px;border-top:1px solid var(--border);}
   .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1/-1;}
   .field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-  input[type="text"],input[type="email"]{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
-  input[type="text"]:focus,input[type="email"]:focus{border-color:var(--accent);}
+  input[type="text"],input[type="email"],input[type="tel"],select{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
+  input[type="text"]:focus,input[type="email"]:focus,input[type="tel"]:focus,select:focus{border-color:var(--accent);}
+  /* Country-code picker + national-number input, side by side. The select
+     is a fixed width just wide enough for "🇮🇳 +91" — its own option list
+     (opened natively by the browser) can still show the full country name. */
+  .phone-row{display:flex;gap:8px;}
+  .phone-row select{flex:0 0 108px;width:108px;padding-left:10px;padding-right:6px;}
+  .phone-row input{flex:1;min-width:0;}
+  @media (max-width:480px){ .phone-row select{flex-basis:92px;width:92px;} }
   input::placeholder{color:var(--muted);}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
 
@@ -269,6 +277,13 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
             <label class="field-label" for="email">Email address</label>
             <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
           </div>
+          <div class="field full">
+            <label class="field-label" for="whatsappNum">WhatsApp number</label>
+            <div class="phone-row">
+              <select id="whatsappCountry" aria-label="Country code"></select>
+              <input type="tel" id="whatsappNum" placeholder="98765 43210" autocomplete="tel-national" inputmode="tel">
+            </div>
+          </div>
           <div class="hp" aria-hidden="true">
             <label for="website">Leave this field empty</label>
             <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
@@ -280,7 +295,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
           <span class="btn-text">Continue</span>
           <div class="btn-spinner"></div>
         </button>
-        <div class="fineprint">We'll use your answers and email only to respond to this application. <a href="https://sarathg.me/privacy/" target="_blank" rel="noopener">Privacy</a></div>
+        <div class="fineprint">We'll use your answers, email and WhatsApp number only to respond to this application. <a href="https://sarathg.me/privacy/" target="_blank" rel="noopener">Privacy</a></div>
       </form>
     </div>
 
@@ -309,6 +324,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
 </main>
 
 <script src="/config.js?v=20260918"></script>
+<script src="/assets/phone-countries.js?v=20260922"></script>
 <script>
   // ── THEME TOGGLE ─────────────────────────────────────────────
   const THEME_KEY = 'meetWithSarathTheme';
@@ -385,7 +401,8 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     fbCustom('QualificationAnswer', { question: QUESTION_KEY[t.name], answer: t.value });
     gaTrack('qualification_answer', { question: QUESTION_KEY[t.name], answer: t.value });
   });
-  form.addEventListener('focusin', (e) => { if (e.target && (e.target.id === 'fname' || e.target.id === 'email')) markStarted(e.target.id); });
+  form.addEventListener('focusin', (e) => { if (e.target && (e.target.id === 'fname' || e.target.id === 'email' || e.target.id === 'whatsappNum')) markStarted(e.target.id); });
+  document.getElementById('whatsappCountry').addEventListener('change', () => markStarted('whatsappCountry'));
 
   function showError(msg) {
     const el = document.getElementById('errorMsg');
@@ -403,6 +420,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     return {
       name: document.getElementById('fname').value.trim(),
       email: document.getElementById('email').value.trim(),
+      whatsapp: combinedPhoneValue(document.getElementById('whatsappCountry'), document.getElementById('whatsappNum')),
       background: checkedValue('background'),
       bottleneck: checkedValue('bottleneck'),
       goal: checkedValue('goal'),
@@ -420,6 +438,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     if (missing.length) { showError('Please answer all four questions.'); document.getElementById('q-' + missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' }); return 'questions:' + missing.join('+'); }
     if (!a.name) { showError('Please enter your name.'); document.getElementById('fname').focus(); return 'name'; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email)) { showError('Please enter a valid email address.'); document.getElementById('email').focus(); return 'email'; }
+    if (!looksLikePhoneNumber(a.whatsapp)) { showError('Please enter a valid WhatsApp number.'); document.getElementById('whatsappNum').focus(); return 'whatsapp'; }
     return null;
   }
 
@@ -436,7 +455,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
         method: 'POST',
         body: JSON.stringify({
           action: 'submit-qualification',
-          name: a.name, email: a.email, background: a.background, bottleneck: a.bottleneck, goal: a.goal, commit: a.commit,
+          name: a.name, email: a.email, whatsapp: a.whatsapp, background: a.background, bottleneck: a.bottleneck, goal: a.goal, commit: a.commit,
           utm: UTM, referrer: document.referrer || '',
           website: document.getElementById('website').value
         })
@@ -477,7 +496,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     // Hand the identity + gate to the booking page through localStorage
     // (same origin) — never through the URL.
     try {
-      localStorage.setItem('meetLead', JSON.stringify({ leadId: data.leadId, name: a.name, email: a.email, outcome }));
+      localStorage.setItem('meetLead', JSON.stringify({ leadId: data.leadId, name: a.name, email: a.email, whatsapp: a.whatsapp, outcome }));
       if (data.gateToken) localStorage.setItem('meetGate', JSON.stringify({ token: data.gateToken, exp: data.expiresAt, leadId: data.leadId }));
     } catch (e) {}
 
@@ -507,12 +526,18 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   }));
   form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'radio') handleSubmit(); });
 
+  // Country picker: render the options, select a best-guess default (see
+  // assets/phone-countries.js), then let a returning applicant's own stored
+  // number override that guess.
+  initPhonePicker(document.getElementById('whatsappCountry'));
+
   // Returning applicant: prefill the identity fields
   try {
     const lead = JSON.parse(localStorage.getItem('meetLead') || 'null');
     if (lead) {
       if (lead.name) document.getElementById('fname').value = lead.name;
       if (lead.email) document.getElementById('email').value = lead.email;
+      if (lead.whatsapp) splitPhoneValue(document.getElementById('whatsappCountry'), document.getElementById('whatsappNum'), lead.whatsapp);
     }
   } catch (e) {}
 </script>

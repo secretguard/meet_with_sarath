@@ -45,7 +45,7 @@ edits.
 
 **If you already have a live sheet from an earlier version:** the newer
 `Bookings` columns (`clientTimezone`, `noShowMarkedAt`, `noShowNudgesSent`,
-`source`) and the `Availability` / `Settings` tabs are created automatically
+`source`, `whatsapp`) and the `Availability` / `Settings` tabs are created automatically
 the first time the backend touches the sheet after you deploy the new
 `Code.gs` — no manual editing needed. `Availability` is seeded with all seven
 days on, `09:00-20:00` (the old hardcoded hours), so nothing changes until
@@ -56,9 +56,9 @@ Final schema, for reference:
 
 | Tab | Columns |
 |---|---|
-| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent, source` |
+| `Bookings` | `eventId, type, name, email, date, time, durationMins, pricePaidPaise, couponCode, status, createdAt, topic, clientTimezone, noShowMarkedAt, noShowNudgesSent, source, whatsapp` — `whatsapp` is optional (blank on a pre-2026-09-22 row, or a caller that didn't send one) and last, same append-only-migration reason as `Leads`' own `whatsapp` column below |
 | `EventTypes` | `id, label, durationMins, pricePaise, active, description, listed` — `listed` blank/TRUE = shown on the home page; FALSE = link-only |
-| `Leads` | `leadId, createdAt, name, email, background, bottleneck, goal, commit, outcome, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, bookedEventId, bookedType, bookedAt` — written by the `/apply/` gate; auto-created |
+| `Leads` | `leadId, createdAt, name, email, background, bottleneck, goal, commit, outcome, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrer, bookedEventId, bookedType, bookedAt, whatsapp` — written by the `/apply/` gate; auto-created. `whatsapp` is last, not next to `email` — added 2026-09-22 after this tab was already live, so it's appended (`ensureLeadsColumns()`) rather than inserted, to keep every existing row's columns aligned. |
 | `Coupons` | `code, discountType, discountValue, usageType, maxUses, usedCount, active, expiry` |
 | `Availability` | `key, enabled, windows, note` — `key` is `mon`..`sun` or `YYYY-MM-DD`; `windows` like `09:00-12:00, 14:00-20:00` (IST) |
 | `Settings` | `key, value` — `minNoticeHours`, `bufferMins`, `maxDaysAhead` |

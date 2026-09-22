@@ -235,9 +235,15 @@
   .field{display:flex;flex-direction:column;gap:6px;}
   .field.full{grid-column:1/-1;}
   .field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-  input[type="text"],input[type="email"],textarea{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
-  input:focus,textarea:focus{border-color:var(--accent);}
+  input[type="text"],input[type="email"],input[type="tel"],textarea,select{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;color:var(--text);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;min-height:44px;}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);}
   input[readonly]{opacity:.7;cursor:not-allowed;}
+  /* Country-code picker + national-number input, side by side — same
+     component as /apply/'s own WhatsApp field. */
+  .phone-row{display:flex;gap:8px;}
+  .phone-row select{flex:0 0 108px;width:108px;padding-left:10px;padding-right:6px;}
+  .phone-row input{flex:1;min-width:0;}
+  @media (max-width:480px){ .phone-row select{flex-basis:92px;width:92px;} }
   input::placeholder,textarea::placeholder{color:var(--muted);}
   textarea{resize:none;height:78px;line-height:1.6;}
 
@@ -463,6 +469,13 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
               <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
             </div>
             <div class="field full">
+              <label class="field-label" for="whatsappNum">WhatsApp number</label>
+              <div class="phone-row">
+                <select id="whatsappCountry" aria-label="Country code"></select>
+                <input type="tel" id="whatsappNum" placeholder="98765 43210" autocomplete="tel-national" inputmode="tel">
+              </div>
+            </div>
+            <div class="field full">
               <label class="field-label" for="topic" id="topicLabel">What would you like to discuss?</label>
               <textarea id="topic" placeholder="Briefly describe your challenge or goal…"></textarea>
             </div>
@@ -499,6 +512,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
 </main>
 
 <script src="/config.js?v=20260918"></script>
+<script src="/assets/phone-countries.js?v=20260922"></script>
 <script>
   // ── THEME TOGGLE ─────────────────────────────────────────────
   const THEME_KEY = 'meetWithSarathTheme';
@@ -634,6 +648,9 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     set('fname', nameParts[0]);
     set('lname', nameParts.slice(1).join(' '));
     set('email', lead.email);
+    if (lead.whatsapp && !document.getElementById('whatsappNum').value) {
+      splitPhoneValue(document.getElementById('whatsappCountry'), document.getElementById('whatsappNum'), lead.whatsapp);
+    }
     if (locked) document.getElementById('email').readOnly = true;
   }
 
@@ -1129,9 +1146,11 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   function validateForm() {
     const fname = document.getElementById('fname').value.trim();
     const email = document.getElementById('email').value.trim();
+    const whatsapp = combinedPhoneValue(document.getElementById('whatsappCountry'), document.getElementById('whatsappNum'));
     if (!selectedType) { showError('Please choose a session type.'); return null; }
     if (!fname) { showError('Please enter your first name.'); return null; }
     if (!email || !email.includes('@')) { showError('Please enter a valid email address.'); return null; }
+    if (!looksLikePhoneNumber(whatsapp)) { showError('Please enter a valid WhatsApp number.'); document.getElementById('whatsappNum').focus(); return null; }
     if (!selDate || !selSlot) { showError('Please select a date and time.'); return null; }
 
     const lname = document.getElementById('lname').value.trim();
@@ -1141,6 +1160,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
       time: selSlot,
       name: (fname + ' ' + lname).trim(),
       email: email,
+      whatsapp: whatsapp,
       topic: topic,
       eventType: selectedType,
       clientTimezone: CLIENT_TZ   // IANA zone name, or null if detection failed
@@ -1325,6 +1345,8 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
     document.getElementById('lname').value = '';
     document.getElementById('email').value = '';
     document.getElementById('email').readOnly = false;
+    document.getElementById('whatsappNum').value = '';
+    initPhonePicker(document.getElementById('whatsappCountry'));
     document.getElementById('topic').value = '';
     document.getElementById('successScreen').classList.remove('show');
     document.getElementById('rightPanel').style.display = 'flex';
@@ -1347,6 +1369,7 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   }
 
   // ── INIT ─────────────────────────────────────────────────────
+  initPhonePicker(document.getElementById('whatsappCountry'));
   loadEventTypes();
   loadClosedDays();
   renderCal();

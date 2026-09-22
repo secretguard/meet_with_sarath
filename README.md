@@ -72,12 +72,14 @@ in sync with your local `Code.gs`:
   (paid event types only, called before opening Razorpay Checkout; amount is
   always recomputed server-side from the Sheet, coupon included — never
   trust a client-supplied discounted amount)
-- `POST { date, time, name, email, topic, eventType, couponCode?, [razorpayOrderId, razorpayPaymentId, razorpaySignature] }`
+- `POST { date, time, name, email, whatsapp?, topic, eventType, couponCode?, [razorpayOrderId, razorpayPaymentId, razorpaySignature] }`
   → `{ success: true, eventId, message }` or `{ error }`
   (payment fields are required unless the *effective* price — after any
   coupon — is 0; a coupon's usage is only consumed here, on a completed
-  booking, never on validate-coupon or create-order)
-- `POST { action: 'submit-qualification', name, email, background, bottleneck, goal, commit, utm{}, referrer, website }`
+  booking, never on validate-coupon or create-order; `whatsapp` is required
+  by the booking page's own client-side validation but optional server-side,
+  so an admin-created booking or any other caller can still omit it)
+- `POST { action: 'submit-qualification', name, email, whatsapp, background, bottleneck, goal, commit, utm{}, referrer, website }`
   → `{ success, outcome: 'book-intake'|'assess'|'free-resources', leadId, gateToken?, expiresAt?, emailed? }` or `{ error }`
   — the `/apply/` gate; `website` is a honeypot. See the gate section below.
 - `POST { action: 'cancel', eventId, email }` → `{ success: true }` or `{ error }`
@@ -144,14 +146,25 @@ form shows both links after you add a type.
 
 A separate landing page for the 1:1 mentorship ad — **not** the default booking
 page. The clicker answers four single-select questions (technical background,
-bottleneck, 30–90-day goal, financial readiness) plus name/email before any calendar appears. The last
-answer routes them:
+bottleneck, 30–90-day goal, financial readiness) plus name/email/WhatsApp number
+before any calendar appears — the WhatsApp number is so an unbooked lead can still
+be reached quickly (admin → Leads has a one-click `wa.me` link per lead; email
+alone often goes unread). The last answer routes them:
 
 | Answer | Outcome |
 |---|---|
 | A — ready to invest if a good fit | Calendar for the hidden, free 15-min **1:1 Career Diagnostic Call** (`/?type=mentorship-intake&focus=1`); booking sends the diagnostic confirmation email |
 | B — ₹499 Job Readiness Check first | The existing paid Job Readiness Check focus landing |
 | C — free self-study only | No calendar; a free-resources page (Foundation Hub `sarathg.me/start`, `labs.sarathg.me`, `gethired.sarathg.me`) + one automated email with the same links |
+
+**The WhatsApp field isn't just an `/apply/` thing** — `index.html`'s own booking
+form has the same country-code-picker field (required, alongside name/email),
+so every booking, not only mentorship leads, gives Sarath a fast way to reach
+the client. A number given at `/apply/` carries forward automatically to the
+booking page (`localStorage.meetLead.whatsapp`, same mechanism as the name/email
+prefill). The country picker (`assets/phone-countries.js`, shared by both pages)
+guesses a default from the visitor's browser locale/timezone — no network
+lookup — always overridable, India pinned first in the list.
 
 The intake call is a normal event type (`mentorship-intake`, unlisted) that the
 backend lists in `GATED_EVENT_TYPES`; booking it requires a signed, 72-hour gate
@@ -280,6 +293,7 @@ meet-with-sarath/
   reschedule/index.html    Move a booking to a new date/time — served at /reschedule/
   admin/index.html         Password-gated dashboard — bookings, availability, leads, event types, coupons — served at /admin/
   apply/index.html         Mentorship qualification gate for the 1:1 mentorship ad — served at /apply/ (noindex)
+  assets/phone-countries.js  Shared WhatsApp country-code picker (index.html + apply/index.html)
   config.js               Your real deployment values — gitignored, not committed
   config.example.js       Placeholder shape of config.js, committed
   .nojekyll                Empty file — tells GitHub Pages to skip Jekyll processing

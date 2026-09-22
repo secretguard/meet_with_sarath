@@ -57,12 +57,21 @@ Script Property is needed.
 
 New tab `Leads` (auto-created): `leadId, createdAt, name, email, background, bottleneck,
 goal, commit, outcome, utmSource, utmMedium, utmCampaign, utmContent, utmTerm,
-referrer, bookedEventId, bookedType, bookedAt`.
+referrer, bookedEventId, bookedType, bookedAt, whatsapp`. `whatsapp` was added
+**2026-09-22**, after this tab was already live with rows — it sits at the very end
+rather than next to `email` where it reads best, because `handleSubmitQualification`'s
+`appendRow()` writes the row **positionally** (matching `LEADS_HEADERS`' declared
+order), and `getLeadsSheet()`'s `ensureLeadsColumns()` migration (same idiom as
+`ensureBookingsColumns()`) only ever *appends* a missing column at the sheet's real
+last column. Inserting `whatsapp` anywhere else in the constant would silently
+misalign every column after it on an already-live sheet.
 
-New public action `POST { action:'submit-qualification', name, email, background,
-bottleneck, goal, commit, utm{}, referrer, website }`:
+New public action `POST { action:'submit-qualification', name, email, whatsapp,
+background, bottleneck, goal, commit, utm{}, referrer, website }`:
 
-- Validates every answer against fixed code sets (below); `website` is a honeypot
+- Validates every answer against fixed code sets (below); `whatsapp` must have
+  8–15 digits once non-digits are stripped (`looksLikePhoneNumber()` — deliberately
+  loose, no country-specific format check); `website` is a honeypot
   (filled = silently accepted, nothing stored or sent).
 - Throttles: max 5 submissions per email per hour (CacheService).
 - Appends the lead row, derives `outcome` from `commit`.
@@ -87,14 +96,22 @@ reschedule/cancel links. Both are chosen in one place (`confirmationEmail()`), s
 admin's "Resend confirmation" sends the same email. Session length in the email
 follows the length set in admin.
 
-Booking side effects: on a gated booking the answers are appended to the booking's
-`topic` (so they appear in the calendar event, the owner's notification email and
-the Bookings row) as a `[Screening] …` line. Whenever a booking carries a `leadId`
-whose lead email matches the booking email, that Leads row gets `bookedEventId /
-bookedType / bookedAt` (first booking wins) — this is the lead→booking join.
+Booking side effects: on a gated booking the answers (including WhatsApp) are
+appended to the booking's `topic` (so they appear in the calendar event, the
+owner's notification email and the Bookings row) as a `[Screening] …` line —
+`leadSummaryLine()` falls back to "WhatsApp: —" when blank. Whenever a booking
+carries a `leadId` whose lead email matches the booking email, that Leads row
+gets `bookedEventId / bookedType / bookedAt` (first booking wins) — this is the
+lead→booking join.
 
 New admin action `admin-list-leads` (newest first). Admin gets a **Leads** tab:
-date, name/email, background, stuck-on, goal, outcome badge, campaign, booked?
+date, name/email, **WhatsApp** (clickable `wa.me` link, digits stripped of `+`/spaces,
+with a prefilled "following up on your mentorship application" message — same
+purpose as the floating WhatsApp button on the booking page), background, stuck-on,
+goal, outcome badge, campaign, booked? A blank number renders as `—`, no link. This
+is the direct answer to *"I can't reach someone who filled the form but didn't book
+— email alone isn't reliable"*: every lead, booked or not, now has a one-click
+WhatsApp path.
 
 `emailShell` gains an optional footer argument (the default "Sent because you
 booked a session" would be wrong for the free-resources email).
@@ -103,15 +120,19 @@ booked a session" would be wrong for the free-resources email).
 
 `apply/index.html`: same visual system as the other pages (theme toggle, serif/sans,
 gold accent). One card, four single-select questions as real radio controls styled as
-option tiles, then name + email, then submit. On success it stores
-`localStorage.meetLead = { leadId, name, email, outcome }` (and `meetGate = { token,
-exp }` for `book-intake`) and navigates same-origin — **no personal data or token in
-any URL**.
+option tiles, then name + email + WhatsApp number, then submit. **No standalone hint
+line under the WhatsApp field** (removed 2026-09-22 per the operator — the field label
+and the country-picker's own "+91" prefix already say enough). WhatsApp is a
+country-code `<select>` + a plain digits `<input>` (`assets/phone-countries.js`, shared
+with `index.html` — see §8 below), combined/validated/stored as one `"+91
+9876543210"`-shaped string throughout. On success it stores `localStorage.meetLead =
+{ leadId, name, email, whatsapp, outcome }` (and `meetGate = { token, exp }` for
+`book-intake`) and navigates same-origin — **no personal data or token in any URL**.
 
 `index.html` (small changes, only active for gated types / a stored lead):
 
 - Gated type with no valid `meetGate` → `location.replace('/apply/')`.
-- Prefills name/email from `meetLead`; email read-only when gated.
+- Prefills name/email/whatsapp from `meetLead`; email read-only when gated.
 - Booking payload carries `gateToken` (gated) and `leadId` (whenever a lead is
   stored) — the latter is how a ₹499 purchase is attributed to its lead.
 - `GATE_REQUIRED` from the server clears the stored gate and sends them back.
@@ -144,7 +165,32 @@ Use in Ads Manager: optimise the campaign on `QualifiedLead` (custom conversion)
 build audiences — `QualifiedLead 30d` (lookalike seed), `UnqualifiedLead 90d`
 (exclusion), `AssessmentIntent 30d` (retarget with the JRC creative).
 
-## 8. Rollout order
+## 8. WhatsApp number, everywhere (2026-09-22 addendum)
+
+Added after the operator asked to reach a lead who filled `/apply/` but didn't book,
+then extended to every booking on the main site: *"add the same phone number field in
+the main booking details page ... so I would be able to communicate to them much more
+frictionless ... give a country code picker and according to the location autofill it."*
+
+- **`assets/phone-countries.js`** — new shared file, loaded by both `/apply/` and
+  `index.html`. A ~128-country `{iso2, name, dial}` list (Wikipedia-checked
+  2026-09-22, not exhaustive — see the file's own header comment for scope), plus
+  `phoneFlagEmoji()`, `guessDefaultCountryIso2()` (browser language region → IANA
+  timezone → India; no network call), `initPhonePicker()`, `combinedPhoneValue()` /
+  `splitPhoneValue()` (drop a leading domestic trunk `0` — otherwise a UK number
+  typed as `07911...` silently produces a dead `wa.me` link), and
+  `looksLikePhoneNumber()`.
+- **`index.html`** gets the same field in the details step (email → **WhatsApp
+  number** → topic), **required** like name/email. Prefilled from
+  `localStorage.meetLead.whatsapp` wherever name/email already prefill.
+- **Backend**: `whatsapp` appended to `BOOKINGS_HEADERS` too (not just `LEADS_HEADERS`
+  — see §5), reusing the pre-existing `ensureBookingsColumns()` migration. Optional
+  server-side (validated only if non-empty) so admin-created bookings aren't blocked.
+  Surfaces in the host notification email.
+- **Admin**: the Bookings tab's Client cell gets the same clickable `wa.me` line as
+  the Leads tab (shared `waLink()` helper); CSV export's column list updated.
+
+## 9. Rollout order
 
 1. Back up `Code.gs`, edit, syntax-check, paste into Apps Script, **new deployment
    version**, run `ensureMentorshipIntakeType()` once.

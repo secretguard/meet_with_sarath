@@ -140,6 +140,8 @@
   .cell-primary{color:var(--text);font-weight:500;}
   .cell-secondary{color:var(--muted);font-size:11.5px;margin-top:2px;}
   .cell-muted{color:var(--muted);}
+  #leadsTable a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;}
+  #leadsTable a:hover{border-color:var(--accent);}
 
   /* Status/active pills — gold=good, red=negative, muted=neutral/in-between.
      Deliberately drawn only from tokens already in the palette (accent,
@@ -557,10 +559,10 @@
       <div class="table-wrap">
         <table id="leadsTable">
           <thead>
-            <tr><th>Lead</th><th>Background</th><th>Stuck on</th><th>Role in 30–90d</th><th>Outcome</th><th>Source</th><th>Booked</th></tr>
+            <tr><th>Lead</th><th>WhatsApp</th><th>Background</th><th>Stuck on</th><th>Role in 30–90d</th><th>Outcome</th><th>Source</th><th>Booked</th></tr>
           </thead>
           <tbody id="leadsBody">
-            <tr class="empty-row"><td colspan="7">Loading…</td></tr>
+            <tr class="empty-row"><td colspan="8">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -971,11 +973,14 @@
       const eventIdAttr = esc(b.eventId);
       const paid = b.pricePaidPaise > 0 ? formatRupees(b.pricePaidPaise) : (b.pricePaidPaise === 0 ? 'Free' : '—');
       const typeLabel = (currentEventTypes.find(t => t.id === b.type) || {}).label || b.type;
+      const bFirstName = String(b.name || '').trim().split(/\s+/)[0];
+      const bWaHref = waLink(b.whatsapp, `Hi ${bFirstName || 'there'}, this is Sarath — about your ${typeLabel} on ${formatBookingDate(b.date)}.`);
       return `<tr>
         <td data-label="Client">
           <div class="cell-stack">
             <span class="cell-primary">${esc(b.name)}</span>
             <span class="cell-secondary">${esc(b.email)}</span>
+            ${bWaHref ? `<span class="cell-secondary"><a href="${bWaHref}" target="_blank" rel="noopener" title="Chat on WhatsApp">${esc(b.whatsapp)}</a></span>` : ''}
             <span class="cell-tertiary">booked ${formatCreatedAt(b.createdAt)}${b.source === 'admin' ? ' · by you' : ''}</span>
           </div>
         </td>
@@ -1157,7 +1162,7 @@
   // ── CSV export ─────────────────────────────────────────────
   // Exports whatever the current filters returned (all pages), every
   // column the sheet has, built entirely client-side.
-  const CSV_COLUMNS = ['eventId', 'type', 'name', 'email', 'date', 'time', 'durationMins', 'pricePaidPaise', 'couponCode', 'status', 'createdAt', 'topic', 'clientTimezone', 'noShowMarkedAt', 'noShowNudgesSent', 'source'];
+  const CSV_COLUMNS = ['eventId', 'type', 'name', 'email', 'date', 'time', 'durationMins', 'pricePaidPaise', 'couponCode', 'status', 'createdAt', 'topic', 'clientTimezone', 'noShowMarkedAt', 'noShowNudgesSent', 'source', 'whatsapp'];
   function exportBookingsCsv() {
     if (!bookingsData.length) { showToast('Nothing to export — no bookings match the current filters.', 'error'); return; }
     const cell = v => {
@@ -1792,16 +1797,25 @@
   async function loadLeads() {
     const reqId = ++leadsReqId;
     const body = document.getElementById('leadsBody');
-    body.innerHTML = '<tr class="empty-row"><td colspan="7">Loading…</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="8">Loading…</td></tr>';
     try {
       const data = await adminFetch('admin-list-leads');
       if (reqId !== leadsReqId) return;
-      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="7">${esc(data.error)}</td></tr>`; return; }
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="8">${esc(data.error)}</td></tr>`; return; }
       leadsData = data.leads || [];
       renderLeads();
     } catch (err) {
-      if (reqId === leadsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="7">Could not load leads. Please try again.</td></tr>';
+      if (reqId === leadsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="8">Could not load leads. Please try again.</td></tr>';
     }
+  }
+
+  // wa.me needs digits only (with country code, no + or spaces) — same
+  // stripping the booking page's own WhatsApp button uses. Shared by the
+  // Leads and Bookings tabs; each builds its own prefilled message.
+  function waLink(raw, text) {
+    const digits = String(raw || '').replace(/\D/g, '');
+    if (!digits) return '';
+    return `https://wa.me/${digits}?text=${encodeURIComponent(text || '')}`;
   }
 
   function renderLeads() {
@@ -1819,7 +1833,7 @@
 
     const filter = document.getElementById('leadsOutcomeFilter').value;
     const rows = leadsData.filter(l => !filter || l.outcome === filter);
-    if (!rows.length) { body.innerHTML = '<tr class="empty-row"><td colspan="7">No leads yet.</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr class="empty-row"><td colspan="8">No leads yet.</td></tr>'; return; }
     const lab = c => LEAD_LABELS[c] || c;
     body.innerHTML = rows.map(l => {
       const oc = LEAD_OUTCOMES[l.outcome] || { label: l.outcome, cls: 'badge-inactive' };
@@ -1827,8 +1841,14 @@
       const bookedTxt = l.bookedEventId
         ? `<span class="badge badge-completed">Booked</span><div class="cell-secondary">${esc(((currentEventTypes.find(t => t.id === l.bookedType) || {}).label) || l.bookedType)}</div>`
         : '—';
+      const firstName = String(l.name || '').trim().split(/\s+/)[0];
+      const waHref = waLink(l.whatsapp, `Hi ${firstName || 'there'}, this is Sarath — following up on your mentorship application.`);
+      const waCell = waHref
+        ? `<a href="${waHref}" target="_blank" rel="noopener" title="Chat on WhatsApp">${esc(l.whatsapp)}</a>`
+        : (l.whatsapp ? esc(l.whatsapp) : '—');
       return `<tr>
         <td data-label="Lead"><div class="cell-stack"><span class="cell-primary">${esc(l.name)}</span><span class="cell-secondary">${esc(l.email)}</span><span class="cell-tertiary">${formatCreatedAt(l.createdAt)}</span></div></td>
+        <td data-label="WhatsApp">${waCell}</td>
         <td data-label="Background">${esc(lab(l.background))}</td>
         <td data-label="Stuck on">${esc(lab(l.bottleneck))}</td>
         <td data-label="Role in 30–90d">${esc(lab(l.goal))}</td>
