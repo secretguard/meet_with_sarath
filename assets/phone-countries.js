@@ -174,9 +174,18 @@ function phoneFlagEmoji(iso2) {
   return String.fromCodePoint(...String(iso2).toUpperCase().split('').map(c => 127397 + c.charCodeAt(0)));
 }
 
-// Priority: the browser's own language region tag (most reliable when
-// present, e.g. "en-IN", "hi-IN", "en-GB") → IANA timezone → India.
+// Priority: IANA timezone → the browser's own language region tag → India.
+// Timezone goes first deliberately: it tracks the device's actual clock
+// setting, which almost always matches where the visitor really is. The
+// language tag is a weaker signal in practice — most browsers report a
+// generic "en-US" unless the visitor has gone out of their way to change
+// OS/browser regional settings, so an Indian visitor on an out-of-the-box
+// "en-US" browser was previously (and wrongly) defaulted to the US.
 function guessDefaultCountryIso2() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (PHONE_TZ_COUNTRY[tz]) return PHONE_TZ_COUNTRY[tz];
+  } catch (e) {}
   try {
     const langs = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
     for (const l of langs) {
@@ -186,10 +195,6 @@ function guessDefaultCountryIso2() {
         if (PHONE_COUNTRIES.some(c => c.iso2 === code)) return code;
       }
     }
-  } catch (e) {}
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (PHONE_TZ_COUNTRY[tz]) return PHONE_TZ_COUNTRY[tz];
   } catch (e) {}
   return 'IN';
 }

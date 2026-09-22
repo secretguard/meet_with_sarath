@@ -163,8 +163,12 @@ so every booking, not only mentorship leads, gives Sarath a fast way to reach
 the client. A number given at `/apply/` carries forward automatically to the
 booking page (`localStorage.meetLead.whatsapp`, same mechanism as the name/email
 prefill). The country picker (`assets/phone-countries.js`, shared by both pages)
-guesses a default from the visitor's browser locale/timezone — no network
-lookup — always overridable, India pinned first in the list.
+guesses a default from the visitor's device timezone first (falling back to
+their browser locale, then India) — no network lookup — always overridable,
+India pinned first in the list. Timezone leads because a browser's locale
+string is very often left at a generic default like `en-US` regardless of
+where the visitor actually is; the device clock's timezone is the more
+trustworthy signal.
 
 The intake call is a normal event type (`mentorship-intake`, unlisted) that the
 backend lists in `GATED_EVENT_TYPES`; booking it requires a signed, 72-hour gate

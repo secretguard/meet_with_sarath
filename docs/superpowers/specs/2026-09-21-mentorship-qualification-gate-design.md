@@ -175,8 +175,13 @@ frictionless ... give a country code picker and according to the location autofi
 - **`assets/phone-countries.js`** — new shared file, loaded by both `/apply/` and
   `index.html`. A ~128-country `{iso2, name, dial}` list (Wikipedia-checked
   2026-09-22, not exhaustive — see the file's own header comment for scope), plus
-  `phoneFlagEmoji()`, `guessDefaultCountryIso2()` (browser language region → IANA
-  timezone → India; no network call), `initPhonePicker()`, `combinedPhoneValue()` /
+  `phoneFlagEmoji()`, `guessDefaultCountryIso2()` (**IANA timezone → browser
+  language region → India**; no network call — order **fixed same-day**: an Indian
+  visitor's browser very commonly reports the generic `en-US` locale regardless of
+  where they actually are, which was beating the correct `Asia/Kolkata` timezone
+  and defaulting the picker to the US; timezone now goes first since it tracks the
+  device's actual clock, a far more reliable signal than a browser's often-untouched
+  default locale string), `initPhonePicker()`, `combinedPhoneValue()` /
   `splitPhoneValue()` (drop a leading domestic trunk `0` — otherwise a UK number
   typed as `07911...` silently produces a dead `wa.me` link), and
   `looksLikePhoneNumber()`.
