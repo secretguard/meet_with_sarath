@@ -188,7 +188,9 @@
     var btn = document.getElementById('refreshBtn');
     if (btn) btn.disabled = true;
 
-    fetch(API + '?action=client-availability&c=' + encodeURIComponent(slug) + '&days=' + DAYS)
+    // The param is `client`, not `c` — Google's frontend 400s a `c` query
+    // param on /exec before Apps Script ever sees the request.
+    fetch(API + '?action=client-availability&client=' + encodeURIComponent(slug) + '&days=' + DAYS)
       .then(function (r) { return r.json(); })
       .then(function (data) {
         loading = false;

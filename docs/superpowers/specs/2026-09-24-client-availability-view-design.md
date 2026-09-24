@@ -73,7 +73,13 @@ this is the standing Cloudflare rule, and the stub count makes it easy to miss.
 
 ### New GET action
 
-`GET ?action=client-availability&c=<slug>&days=28`
+`GET ?action=client-availability&client=<slug>&days=28`
+
+The slug param is **`client`, not `c`**. Google's frontend rejects a `c` query
+param on `script.google.com/macros/.../exec` with an HTTP 400 (`Server: ESF`)
+before Apps Script runs at all, so a `c`-based URL fails for every client while
+passing every local test. Found by probing the live deployment before going
+live, 2026-09-24; both suites now carry a regression guard.
 
 ```json
 { "client": { "name": "Brototype", "mode": "view" },
