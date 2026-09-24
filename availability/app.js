@@ -31,7 +31,37 @@
   var app = document.getElementById('app');
   var errorState = document.getElementById('errorState');
 
-  var state = { data: null, byDate: {}, months: [], monthIdx: 0, selected: null, today: null };
+  var state = {
+    data: null, byDate: {}, months: [], monthIdx: 0, selected: null, today: null,
+    // Booking mode (phase 2). `form` survives re-renders so switching days
+    // doesn't wipe what the client already typed. `done` holds the last
+    // confirmed booking so the success panel survives a refresh.
+    book: {
+      durationMins: 60, unit: 'minutes', startMins: null, busy: false, error: '',
+      form: { name: '', email: '', topic: '', guests: [] },
+      done: null
+    }
+  };
+
+  var BOOK_MIN = 15, BOOK_MAX = 120, BOOK_STEP = 15, BOOK_MAX_GUESTS = 10;
+
+  // `bookingEnabled` is sent only by a backend that actually implements
+  // client-book. Requiring it means this page can ship before the backend is
+  // deployed without ever showing a client a form that would fail: an older
+  // backend still returns mode:'book', so mode alone is not proof.
+  function isBookMode() {
+    var c = state.data && state.data.client;
+    return !!(c && c.mode === 'book' && c.bookingEnabled === true);
+  }
+  // A session type assigned in admin fixes the length; the client is then not
+  // asked to choose one.
+  function fixedDuration() {
+    var d = state.data && state.data.client && state.data.client.durationMins;
+    return d ? Number(d) : 0;
+  }
+  function activeDuration() {
+    return fixedDuration() || state.book.durationMins;
+  }
 
   // ── slug from the path: /availability/<slug>/ ──────────
   function slugFromPath() {
@@ -297,6 +327,298 @@
       list.appendChild(range);
     });
     box.appendChild(list);
+
+    if (isBookMode()) box.appendChild(buildBookPanel(day));
+  }
+
+  // ── booking mode (phase 2) ─────────────────────────────
+  function hhmmToMins(hhmm) {
+    var p = hhmmToParts(hhmm);
+    return p.h * 60 + p.m;
+  }
+  function minsLabel(mins) {
+    return istLabel(pad2(Math.floor(mins / 60)) + ':' + pad2(mins % 60));
+  }
+
+  // Every quarter-hour start at which the whole session still fits inside one
+  // of the day's free ranges. A range that begins at 11:07 starts offering
+  // 11:15 — the grid is rounded up, never into the busy block before it.
+  function startOptions(day, durationMins) {
+    var starts = [];
+    (day.ranges || []).forEach(function (r) {
+      var rs = hhmmToMins(r[0]), re = hhmmToMins(r[1]);
+      var first = Math.ceil(rs / BOOK_STEP) * BOOK_STEP;
+      for (var s = first; s + durationMins <= re; s += BOOK_STEP) starts.push(s);
+    });
+    return starts;
+  }
+
+  function field(labelText, id, type, value, placeholder) {
+    var wrap = el('div', 'field');
+    var lab = el('label', null, labelText);
+    lab.setAttribute('for', id);
+    var input = el('input');
+    input.id = id;
+    input.type = type;
+    input.value = value || '';
+    if (placeholder) input.placeholder = placeholder;
+    wrap.appendChild(lab);
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function buildBookPanel(day) {
+    var panel = el('div', 'book-panel');
+    panel.id = 'bookPanel';
+
+    // Already booked this day in this session — show the receipt, not the form.
+    var done = state.book.done;
+    if (done && done.date === day.date) {
+      var ok = el('div', 'book-success');
+      ok.id = 'bookSuccess';
+      ok.appendChild(el('div', 'book-success-title', 'Booked'));
+      ok.appendChild(el('p', null,
+        dateLabel(done.date) + ' at ' + minsLabel(done.startMins) +
+        ' IST · ' + done.durationMins + ' min. A calendar invite is on its way.'));
+      var again = el('button', 'ghost-btn', 'Book another');
+      again.type = 'button';
+      again.addEventListener('click', function () { state.book.done = null; renderDetail(); });
+      ok.appendChild(again);
+      panel.appendChild(ok);
+      return panel;
+    }
+
+    panel.appendChild(el('div', 'book-title', 'Book this day'));
+
+    // ── duration ──
+    if (!fixedDuration()) {
+      var durRow = el('div', 'dur-row');
+      var durField = el('div', 'field');
+      durField.appendChild(el('label', null, 'Length'));
+
+      var stepper = el('div', 'stepper');
+      var minus = el('button', 'step-btn', '−');
+      minus.type = 'button';
+      minus.setAttribute('aria-label', 'Shorter');
+      var input = el('input');
+      input.id = 'durValue';
+      input.type = 'number';
+      var hours = state.book.unit === 'hours';
+      input.min = hours ? 0.25 : BOOK_MIN;
+      input.max = hours ? BOOK_MAX / 60 : BOOK_MAX;
+      input.step = hours ? 0.25 : BOOK_STEP;
+      input.value = hours ? String(state.book.durationMins / 60) : String(state.book.durationMins);
+      var plus = el('button', 'step-btn', '+');
+      plus.type = 'button';
+      plus.setAttribute('aria-label', 'Longer');
+
+      minus.addEventListener('click', function () { nudgeDuration(-BOOK_STEP); });
+      plus.addEventListener('click', function () { nudgeDuration(BOOK_STEP); });
+      input.addEventListener('input', function () {
+        var raw = Number(input.value);
+        if (isNaN(raw)) return;
+        setDuration(state.book.unit === 'hours' ? Math.round(raw * 60) : Math.round(raw));
+      });
+
+      stepper.appendChild(minus);
+      stepper.appendChild(input);
+      stepper.appendChild(plus);
+      durField.appendChild(stepper);
+      durRow.appendChild(durField);
+
+      // minutes / hours — the operator's ask: let them work in whichever unit suits
+      var units = el('div', 'unit-toggle');
+      ['minutes', 'hours'].forEach(function (u) {
+        var lab = el('label', 'unit-opt');
+        var radio = el('input');
+        radio.type = 'radio';
+        radio.name = 'durUnit';
+        radio.value = u;
+        radio.checked = state.book.unit === u;
+        radio.addEventListener('change', function () {
+          if (!radio.checked) return;
+          state.book.unit = u;
+          renderDetail();
+        });
+        lab.appendChild(radio);
+        lab.appendChild(el('span', null, u));
+        units.appendChild(lab);
+      });
+      durRow.appendChild(units);
+      panel.appendChild(durRow);
+    }
+
+    // ── start times ──
+    var starts = startOptions(day, activeDuration());
+    if (!starts.length) {
+      panel.appendChild(el('p', 'book-note',
+        'No ' + activeDuration() + '-minute session fits in this day’s open time. Try a shorter length or another day.'));
+      return panel;
+    }
+
+    if (state.book.startMins === null || starts.indexOf(state.book.startMins) === -1) {
+      state.book.startMins = null;
+    }
+
+    var grid = el('div', 'slots-grid');
+    starts.forEach(function (s) {
+      var chip = el('button', 'slot' + (state.book.startMins === s ? ' selected' : ''), minsLabel(s));
+      chip.type = 'button';
+      chip.addEventListener('click', function () {
+        state.book.startMins = s;
+        state.book.error = '';
+        renderDetail();
+      });
+      grid.appendChild(chip);
+    });
+    panel.appendChild(grid);
+
+    // ── who ──
+    var form = el('div', 'book-form');
+    form.appendChild(field('Your name', 'bkName', 'text', state.book.form.name, 'Arjun M'));
+    form.appendChild(field('Your email', 'bkEmail', 'email', state.book.form.email, 'you@example.com'));
+
+    var guestsWrap = el('div', 'field span-all');
+    guestsWrap.appendChild(el('label', null, 'Add guests (optional)'));
+    var guestList = el('div');
+    guestList.id = 'guestList';
+    state.book.form.guests.forEach(function (g, i) { guestList.appendChild(guestRow(g, i)); });
+    guestsWrap.appendChild(guestList);
+    var addGuest = el('button', 'ghost-btn', '+ Add guest');
+    addGuest.id = 'addGuestBtn';
+    addGuest.type = 'button';
+    addGuest.addEventListener('click', function () {
+      readForm();
+      if (state.book.form.guests.length >= BOOK_MAX_GUESTS) return;
+      state.book.form.guests.push('');
+      renderDetail();
+    });
+    guestsWrap.appendChild(addGuest);
+    form.appendChild(guestsWrap);
+
+    form.appendChild(field('What’s this about? (optional)', 'bkTopic', 'text', state.book.form.topic, 'Batch 14 review'));
+    panel.appendChild(form);
+
+    var err = el('p', 'book-error', state.book.error);
+    err.id = 'bookError';
+    if (!state.book.error) err.hidden = true;
+    panel.appendChild(err);
+
+    var submit = el('button', 'book-submit', state.book.busy ? 'Booking…' : 'Confirm booking');
+    submit.id = 'bookSubmit';
+    submit.type = 'button';
+    submit.disabled = !!state.book.busy;
+    submit.addEventListener('click', function () { submitBooking(day); });
+    panel.appendChild(submit);
+
+    return panel;
+  }
+
+  function guestRow(value, index) {
+    var row = el('div', 'guest-row');
+    var input = el('input');
+    input.type = 'email';
+    input.value = value || '';
+    input.placeholder = 'guest@example.com';
+    var rm = el('button', 'guest-remove', '×');
+    rm.type = 'button';
+    rm.setAttribute('aria-label', 'Remove guest');
+    rm.addEventListener('click', function () {
+      readForm();
+      state.book.form.guests.splice(index, 1);
+      renderDetail();
+    });
+    row.appendChild(input);
+    row.appendChild(rm);
+    return row;
+  }
+
+  function setDuration(mins) {
+    var snapped = Math.round(mins / BOOK_STEP) * BOOK_STEP;
+    if (snapped < BOOK_MIN) snapped = BOOK_MIN;
+    if (snapped > BOOK_MAX) snapped = BOOK_MAX;
+    if (snapped === state.book.durationMins) return;
+    state.book.durationMins = snapped;
+    state.book.startMins = null; // the old start may no longer fit
+    readForm();
+    renderDetail();
+  }
+  function nudgeDuration(delta) {
+    readForm();
+    setDuration(state.book.durationMins + delta);
+  }
+
+  // Pull whatever is currently typed into state before any re-render.
+  function readForm() {
+    var n = document.getElementById('bkName');
+    var e2 = document.getElementById('bkEmail');
+    var t = document.getElementById('bkTopic');
+    if (n) state.book.form.name = n.value;
+    if (e2) state.book.form.email = e2.value;
+    if (t) state.book.form.topic = t.value;
+    var list = document.getElementById('guestList');
+    if (list) {
+      state.book.form.guests = Array.prototype.map.call(
+        list.querySelectorAll('input'), function (i) { return i.value; });
+    }
+  }
+
+  function looksLikeEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+  }
+
+  function submitBooking(day) {
+    readForm();
+    var f = state.book.form;
+    var fail = function (msg) { state.book.error = msg; renderDetail(); };
+
+    if (state.book.startMins === null) return fail('Please pick a start time.');
+    if (!f.name.trim()) return fail('Please enter your name.');
+    if (!looksLikeEmail(f.email)) return fail('Please enter a valid email address.');
+
+    var guests = [];
+    for (var i = 0; i < f.guests.length; i++) {
+      var g = String(f.guests[i] || '').trim();
+      if (!g) continue;
+      if (!looksLikeEmail(g)) return fail('“' + g + '” is not a valid email address.');
+      guests.push(g);
+    }
+
+    state.book.error = '';
+    state.book.busy = true;
+    renderDetail();
+
+    var startMins = state.book.startMins;
+    var durationMins = activeDuration();
+
+    fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'client-book',
+        client: slugFromPath(),
+        date: day.date,
+        time: pad2(Math.floor(startMins / 60)) + ':' + pad2(startMins % 60),
+        durationMins: durationMins,
+        name: f.name.trim(),
+        email: f.email.trim(),
+        guests: guests,
+        topic: f.topic.trim(),
+        clientTimezone: (Intl.DateTimeFormat().resolvedOptions().timeZone || '')
+      })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        state.book.busy = false;
+        if (!res || res.error) { return fail(res && res.error ? res.error : 'Could not book that time. Please try again.'); }
+        state.book.done = { date: day.date, startMins: startMins, durationMins: durationMins };
+        state.book.startMins = null;
+        state.book.form = { name: f.name, email: f.email, topic: '', guests: [] };
+        load(true); // the booked time must disappear from the calendar
+      })
+      .catch(function () {
+        state.book.busy = false;
+        fail('Could not reach the server. Please try again.');
+      });
   }
 
   // ── render ─────────────────────────────────────────────
@@ -316,10 +638,15 @@
     // viewer's clock, which may be a day off in another timezone.
     state.today = (data.days && data.days.length) ? data.days[0].date : null;
 
-    // Land on the first day that actually has open time, so the page never
-    // opens on an empty detail strip.
+    // Keep whatever day the client is looking at across a refresh — otherwise
+    // the post-booking reload would jump them off the day they just booked and
+    // take the confirmation with it. Only choose a day on the first load.
+    var keep = state.selected && state.byDate[state.selected] ? state.selected : null;
+
+    // Otherwise land on the first day that actually has open time, so the page
+    // never opens on an empty detail strip.
     var firstFree = (data.days || []).filter(function (x) { return (x.ranges || []).length; })[0];
-    state.selected = firstFree ? firstFree.date : null;
+    state.selected = keep || (firstFree ? firstFree.date : null);
     state.monthIdx = state.selected ? Math.max(0, state.months.indexOf(state.selected.slice(0, 7))) : 0;
 
     buildShell(data);

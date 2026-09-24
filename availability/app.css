@@ -126,6 +126,78 @@ h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;line-height:
 .range-local{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;}
 .day-empty{font-size:14px;color:var(--muted);}
 
+/* ── booking mode (phase 2) ─────────────────────────── */
+.book-panel{margin-top:20px;padding-top:18px;border-top:1px solid var(--border);}
+.book-title{font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.book-note{font-size:13.5px;color:var(--muted);margin:0;}
+
+.dur-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;margin-bottom:16px;}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.field label{font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+.field input{
+  background:var(--surface);border:1px solid var(--border);border-radius:9px;
+  padding:9px 11px;font-size:14px;color:var(--text);font-family:var(--sans);outline:none;width:100%;
+}
+.field input:focus{border-color:var(--accent);}
+
+.stepper{display:flex;align-items:center;gap:6px;}
+.stepper input{width:72px;text-align:center;font-variant-numeric:tabular-nums;}
+.step-btn{
+  width:34px;height:34px;flex:0 0 auto;border:1px solid var(--border);background:none;
+  color:var(--muted);border-radius:8px;cursor:pointer;font-size:16px;line-height:1;
+  font-family:var(--sans);transition:border-color .15s,color .15s;
+}
+.step-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.unit-toggle{display:flex;gap:6px;}
+.unit-opt{
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+  border:1px solid var(--border);border-radius:9px;padding:8px 11px;
+  font-size:12.5px;color:var(--muted);transition:border-color .15s,color .15s;
+}
+.unit-opt:has(input:checked){border-color:var(--accent);color:var(--accent);}
+.unit-opt input{accent-color:var(--accent);margin:0;}
+
+.slots-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-bottom:18px;}
+.slot{
+  min-height:42px;padding:9px 6px;border:1px solid var(--border);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:13.5px;color:var(--muted);cursor:pointer;background:var(--surface);
+  font-family:var(--sans);font-variant-numeric:tabular-nums;transition:all .15s;
+}
+.slot:hover{border-color:var(--accent);color:var(--text);}
+.slot.selected{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:600;}
+
+.book-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.book-form .span-all{grid-column:1 / -1;}
+.guest-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.guest-remove{
+  width:34px;height:34px;flex:0 0 auto;border:1px solid var(--border);background:none;
+  color:var(--muted);border-radius:8px;cursor:pointer;font-size:15px;line-height:1;font-family:var(--sans);
+}
+.guest-remove:hover{border-color:var(--red,#e0685c);color:var(--red,#e0685c);}
+.ghost-btn{
+  background:none;border:1px dashed var(--border);border-radius:8px;padding:7px 11px;
+  font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--sans);
+}
+.ghost-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.book-error{color:#e0685c;font-size:13px;margin:0 0 12px;}
+.book-submit{
+  width:100%;min-height:46px;border:none;border-radius:10px;background:var(--accent);
+  color:var(--btn-text);font-family:var(--sans);font-size:14.5px;font-weight:600;cursor:pointer;
+  transition:opacity .15s;
+}
+.book-submit:hover{opacity:.9;}
+.book-submit:disabled{opacity:.55;cursor:default;}
+
+.book-success{
+  border:1px solid var(--accent-dim);background:var(--accent-soft);
+  border-radius:var(--radius);padding:18px;
+}
+.book-success-title{font-family:var(--serif);font-size:18px;font-weight:600;margin-bottom:4px;}
+.book-success p{margin:0 0 12px;font-size:14px;color:var(--muted);}
+
 /* ── states ─────────────────────────────────────────── */
 .muted{color:var(--muted);}
 #loading{padding:24px 0;}
@@ -141,4 +213,7 @@ h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;line-height:
   .wrap{padding:24px 16px 48px;}
   h1{font-size:21px;}
   .day{min-height:40px;font-size:13.5px;}
+  .book-form{grid-template-columns:1fr;}
+  .slots-grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:7px;}
+  .dur-row{gap:12px;}
 }
