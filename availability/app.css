@@ -1,12 +1,13 @@
 /* Read-only per-client availability view.
    Shared by every /availability/<slug>/ stub — see app.js.
-   Palette and type match the booking page; dark is the default theme,
-   [data-theme="light"] opts out, same convention as index.html. */
+   Palette, type and the calendar classes match the booking page; dark is the
+   default theme, [data-theme="light"] opts out, same as index.html. */
 
 :root{
   --bg:#faf8f5; --panel:#ffffff; --surface:#f4f1ec; --border:#e2ded6;
   --text:#17191d; --muted:#5c6370; --accent:#8f6a30;
   --accent-soft:#8f6a3014; --accent-dim:#8f6a3033;
+  --btn-text:#ffffff;
   --shadow:0 1px 2px #17191d08, 0 12px 32px #17191d0f;
   --avatar-bg:#1c4d3a; --avatar-text:#cda868;
   --serif:'Playfair Display', Georgia, serif;
@@ -17,6 +18,7 @@
   --bg:#0a0e14; --panel:#10161f; --surface:#161d29; --border:#232c3a;
   --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
   --accent-soft:#cda86814; --accent-dim:#cda86833;
+  --btn-text:#0a0e14;
   --shadow:0 0 0 1px #ffffff0d, 0 16px 40px #00000066;
 }
 
@@ -27,7 +29,7 @@ body{
   font-family:var(--sans);font-size:16px;line-height:1.6;
   -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px;}
+.wrap{max-width:520px;margin:0 auto;padding:32px 20px 64px;}
 
 /* ── header ─────────────────────────────────────────── */
 .head{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
@@ -40,7 +42,7 @@ h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;line-height:
 .sub{color:var(--muted);font-size:14.5px;margin:0 0 4px;}
 .meta{
   display:flex;flex-wrap:wrap;align-items:center;gap:10px;
-  margin:16px 0 26px;padding-top:16px;border-top:1px solid var(--border);
+  margin:16px 0 22px;padding-top:16px;border-top:1px solid var(--border);
   color:var(--muted);font-size:13px;
 }
 #asOf{white-space:nowrap;}
@@ -52,18 +54,73 @@ h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;line-height:
 #refreshBtn:hover{background:var(--accent-soft);}
 #refreshBtn[disabled]{opacity:.5;cursor:default;}
 
-/* ── day rows ───────────────────────────────────────── */
-.days{display:flex;flex-direction:column;gap:2px;}
-.day-row{
-  display:grid;grid-template-columns:130px 1fr;gap:16px;
-  padding:13px 14px;border-radius:10px;align-items:start;
+/* ── calendar (same classes as the booking page) ────── */
+.cal{margin-bottom:14px;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-month{font-size:16px;font-weight:600;color:var(--text);}
+.nav-btn{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  width:40px;height:40px;border-radius:9px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;
+  font-family:var(--sans);transition:border-color .2s,color .2s;
 }
-.day-row:nth-child(odd){background:var(--surface);}
-.day-row.is-empty .day-times{color:var(--muted);}
-.day-label{display:flex;flex-direction:column;gap:1px;min-width:0;}
-.day-name{font-weight:600;font-size:14.5px;}
-.day-date{color:var(--muted);font-size:12.5px;}
-.day-times{display:flex;flex-direction:column;gap:7px;min-width:0;}
+.nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.nav-btn:disabled{opacity:.3;cursor:default;}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+.wd{text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:3px 0;}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+
+.day{
+  aspect-ratio:1;min-height:44px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;border-radius:9px;color:var(--text);
+  border:1px solid transparent;transition:all .15s;position:relative;cursor:default;
+}
+/* Leading cells before the 1st — no date, nothing to show. */
+.day.empty{color:transparent;}
+/* A real date outside the four-week window (already gone by, or past the
+   horizon): dimmed but legible, same treatment the booking page gives a
+   past day. */
+.day.out{color:var(--border);}
+/* Open time — the only clickable state. */
+.day.has-free{cursor:pointer;}
+.day.has-free:hover{border-color:var(--accent);color:var(--accent);}
+.day.has-free:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+/* Not working that day: struck through, exactly as the booking page shows a
+   closed day. */
+.day.closed{color:var(--border);text-decoration:line-through;text-decoration-color:var(--border);}
+/* Open, but nothing free left — muted WITHOUT the strike, so it reads as a
+   different fact from "not working". */
+.day.full{color:var(--muted);opacity:.55;}
+.day.today{font-weight:600;box-shadow:inset 0 0 0 1px var(--border);}
+.day.selected{background:var(--accent);color:var(--btn-text)!important;border-color:var(--accent);font-weight:600;}
+.day.selected .day-dot{background:var(--btn-text);}
+
+.day-num{position:relative;z-index:1;}
+.day-dot{
+  position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--accent);
+}
+
+/* ── legend ─────────────────────────────────────────── */
+.legend{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+  margin:14px 0 0;font-size:11.5px;color:var(--muted);
+}
+.lg{display:inline-flex;align-items:center;gap:6px;position:relative;}
+.lg .day-dot{position:static;transform:none;}
+.lg-swatch{width:11px;height:11px;border-radius:3px;background:var(--border);display:inline-block;position:relative;}
+.lg-swatch.closed::after{
+  content:'';position:absolute;top:50%;left:-1px;right:-1px;height:1px;
+  background:var(--muted);
+}
+.lg-swatch.full{opacity:.55;}
+
+/* ── the selected day's times ───────────────────────── */
+.detail{
+  margin-top:20px;padding-top:18px;border-top:1px solid var(--border);
+}
+.detail-date{font-size:14.5px;font-weight:600;margin-bottom:10px;}
+.detail-ranges{display:flex;flex-direction:column;gap:10px;}
 .range{display:flex;flex-direction:column;gap:1px;}
 .range-ist{font-size:15px;font-variant-numeric:tabular-nums;}
 .range-local{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;}
@@ -78,11 +135,10 @@ h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;line-height:
 }
 #errorState h2{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 6px;}
 #errorState p{margin:0;color:var(--muted);font-size:14.5px;}
-.foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;}
+.foot{margin-top:30px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;}
 
 @media (max-width:560px){
   .wrap{padding:24px 16px 48px;}
   h1{font-size:21px;}
-  .day-row{grid-template-columns:1fr;gap:5px;padding:12px 12px;}
-  .day-label{flex-direction:row;align-items:baseline;gap:8px;}
+  .day{min-height:40px;font-size:13.5px;}
 }
