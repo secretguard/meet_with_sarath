@@ -78,7 +78,7 @@ this is the standing Cloudflare rule, and the stub count makes it easy to miss.
 ```json
 { "client": { "name": "Brototype", "mode": "view" },
   "timezone": "Asia/Kolkata",
-  "generatedAt": "2026-09-24T09:12:00+05:30",
+  "generatedAt": "2026-09-24 16:05",
   "days": [
     { "date": "2026-09-24", "ranges": [["09:00","11:30"],["14:00","18:00"]] },
     { "date": "2026-09-25", "ranges": [], "closed": true }
@@ -146,7 +146,14 @@ per-client hours anywhere.
 - Header: "Availability for <client name>", an "as of <time>" line with a
   refresh control, and a short note that times are live and can change.
 - Day rows for 4 weeks. Each row: weekday + date, then the free ranges. IST
-  always; the viewer's local equivalent shown alongside only when it differs.
+  always; the viewer's local equivalent shown alongside only when their UTC
+  offset actually differs (compared by offset, not zone name, so Asia/Colombo
+  gets no redundant second line). Both lines are forced to the same 12-hour
+  format regardless of browser locale.
+- When an IST time falls on a different calendar date for the viewer — 9:00 AM
+  IST is the previous day in New York — the local line names that date, e.g.
+  "11:30 PM – 1:30 AM your time (23 Sep)". Without it the client would be
+  pointed at the wrong day.
 - Closed days render as "Unavailable" rather than being hidden, so absence
   reads as deliberate rather than as a loading failure.
 - Mobile first, matching the site's existing type scale and mint palette.

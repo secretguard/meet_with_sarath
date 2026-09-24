@@ -1,0 +1,7 @@
+User-agent: *
+# Per-client availability links are private by arrangement, not by secrecy —
+# they must never appear in search results.
+Disallow: /availability/
+# The mentorship qualification gate is noindex in its own <head> too.
+Disallow: /apply/
+Allow: /

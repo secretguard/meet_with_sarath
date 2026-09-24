@@ -235,6 +235,9 @@
   .switch .sw-label{font-size:12px;font-weight:600;color:var(--text);}
   .switch .sw-help{font-size:11px;color:var(--muted);line-height:1.4;}
   /* retired group */
+  /* Clients tab reuses the Event Types card system (.et-*); .cl-card is only
+     a hook for the client-specific bits. */
+  .cl-link{margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:var(--muted);word-break:break-all;}
   .et-retired{margin-top:18px;border-top:1px solid var(--border);padding-top:14px;}
   .et-retired summary{cursor:pointer;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;}
   .et-retired summary::-webkit-details-marker{display:none;}
@@ -378,6 +381,7 @@
     <button class="tab-btn" data-tab="availability" onclick="switchTab('availability')">Availability</button>
     <button class="tab-btn" data-tab="leads" onclick="switchTab('leads')">Leads</button>
     <button class="tab-btn" data-tab="eventtypes" onclick="switchTab('eventtypes')">Event Types</button>
+    <button class="tab-btn" data-tab="clients" onclick="switchTab('clients')">Clients</button>
     <button class="tab-btn" data-tab="coupons" onclick="switchTab('coupons')">Coupons</button>
   </div>
 
@@ -536,6 +540,24 @@
       <details class="et-retired" id="etRetired" style="display:none">
         <summary><span id="etRetiredLabel">Retired</span></summary>
         <div class="et-list" id="etRetiredList"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- CLIENTS TAB — read-only availability links (/availability/<slug>/) -->
+  <div class="tab-panel" id="tab-clients">
+    <div class="panel">
+      <h2>Clients</h2>
+      <div class="et-toolbar">
+        <p>Each client gets a read-only link showing your open time — no sign-in, hidden from search, and it never lets them book. Hours, date overrides and the horizon come from the <strong>Availability</strong> tab; there is nothing per-client to keep in sync.
+        <br><strong>A new client also needs its folder committed once:</strong> copy <code>availability/index.html</code> to <code>availability/&lt;slug&gt;/index.html</code> and push. Nothing inside the file changes.</p>
+        <button class="btn btn-sm" id="clAddBtn" onclick="startNewClient()">+ Add client</button>
+      </div>
+      <div class="et-list" id="clNewSlot"></div>
+      <div class="et-list" id="clLiveList"><div class="et-card cl-card"><span class="et-id">Loading…</span></div></div>
+      <details class="et-retired" id="clRetired" style="display:none">
+        <summary><span id="clRetiredLabel">Inactive</span></summary>
+        <div class="et-list" id="clRetiredList"></div>
       </details>
     </div>
   </div>
@@ -791,6 +813,7 @@
     const monthInput = document.getElementById('statsMonth');
     if (!monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
     loadEventTypesTab();
+    loadClientsTab();
     loadCoupons();
     loadLeads();
     loadBookings();
@@ -1793,6 +1816,163 @@
   };
   let leadsData = [];
   let leadsReqId = 0; // same stale-response guard as bookingsReqId
+
+  // ============================================================
+  // CLIENTS — read-only availability links
+  // ------------------------------------------------------------
+  // A client sees /availability/<slug>/ : your open time as ranges, nothing
+  // more. The slug is the shared URL, so it is fixed after creation — editing
+  // a client never changes a link already sent out. `mode` is stored and
+  // toggleable now; the clickable-booking rendering is phase 2, so switching
+  // it on today is harmless and still renders read-only.
+  // ============================================================
+  let currentClients = [];
+  let clEditingSlug = null;
+  let clientsReqId = 0;
+
+  function clientLink(slug) { return `${location.origin}/availability/${encodeURIComponent(slug)}/`; }
+  function copyClientLink(slug) { copyText(clientLink(slug), 'Client link'); }
+
+  async function loadClientsTab() {
+    const reqId = ++clientsReqId;
+    const live = document.getElementById('clLiveList');
+    live.innerHTML = '<div class="et-card cl-card"><span class="et-id">Loading…</span></div>';
+    try {
+      const data = await adminFetch('admin-list-clients');
+      if (reqId !== clientsReqId) return;
+      if (data.error) { live.innerHTML = `<div class="et-card cl-card"><span class="et-id">${esc(data.error)}</span></div>`; return; }
+      currentClients = data.clients || [];
+      renderClients();
+    } catch (err) {
+      if (reqId === clientsReqId) live.innerHTML = '<div class="et-card cl-card"><span class="et-id">Could not load clients. Please try again.</span></div>';
+    }
+  }
+
+  function renderClients() {
+    const live = document.getElementById('clLiveList');
+    const box = document.getElementById('clRetired');
+    const list = document.getElementById('clRetiredList');
+    const on = currentClients.filter(c => isTrue(c.active));
+    const off = currentClients.filter(c => !isTrue(c.active));
+
+    live.innerHTML = on.length ? on.map(clientCardHtml).join('') : '<div class="et-card cl-card"><span class="et-id">No active clients. Add one above.</span></div>';
+    if (off.length) {
+      box.style.display = '';
+      document.getElementById('clRetiredLabel').textContent = `Inactive (${off.length}) — their links stop resolving immediately`;
+      list.innerHTML = off.map(clientCardHtml).join('');
+    } else {
+      box.style.display = 'none';
+      list.innerHTML = '';
+    }
+  }
+
+  function clientCardHtml(c) {
+    const active = isTrue(c.active), slug = esc(c.slug), editing = clEditingSlug === c.slug;
+    const book = c.mode === 'book';
+    return `
+      <div class="et-card cl-card${editing ? ' editing' : ''}${active ? '' : ' retired'}" data-slug="${slug}">
+        <div class="et-head">
+          <div>
+            <div class="et-title">${esc(c.name)}</div>
+            <div class="et-id">${slug}</div>
+          </div>
+          <div class="et-meta">
+            ${book ? '<span class="et-pill link">Full booking</span>' : '<span class="et-pill on">View only</span>'}
+            ${active ? '<span class="et-pill on">Active</span>' : '<span class="et-pill off">Inactive</span>'}
+          </div>
+        </div>
+        ${editing ? clientFormHtml(c, false) : `
+          <div class="cl-link">${esc(clientLink(c.slug))}</div>
+          ${c.note ? `<div class="et-preview">${esc(c.note)}</div>` : ''}
+          <div class="et-actions">
+            <button class="ghost" onclick="copyClientLink('${slug}')">Copy link</button>
+            <button class="ghost" onclick="editClient('${slug}')">Edit</button>
+          </div>`}
+      </div>`;
+  }
+
+  function clientFormHtml(c, isNew) {
+    const active = isNew ? true : isTrue(c.active);
+    const book = !isNew && c.mode === 'book';
+    const opts = (currentEventTypes || []).filter(t => isTrue(t.active))
+      .map(t => `<option value="${esc(t.id)}"${c.eventTypeId === t.id ? ' selected' : ''}>${esc(t.label)}</option>`).join('');
+    return `
+      <div class="et-form">
+        <div class="filter-field"><label>Client name</label><input type="text" data-field="name" value="${esc(c.name || '')}" placeholder="e.g. Brototype"></div>
+        ${isNew
+          ? `<div class="filter-field"><label>Link slug</label><input type="text" data-field="slug" placeholder="generated from the name" disabled></div>`
+          : `<div class="filter-field"><label>Link slug — fixed</label><input type="text" data-field="slug" value="${esc(c.slug)}" readonly></div>`}
+        <div class="filter-field span-all"><label>Note (for you only)</label><input type="text" data-field="note" value="${esc(c.note || '')}" placeholder="What these sessions are for"></div>
+        <label class="switch"><input type="checkbox" data-field="active" ${active ? 'checked' : ''}><span class="track"></span><span class="sw-text"><span class="sw-label">Active</span><span class="sw-help">Their link works. Off = it stops resolving immediately, for everyone holding it.</span></span></label>
+        <label class="switch"><input type="checkbox" data-field="mode" ${book ? 'checked' : ''}><span class="track"></span><span class="sw-text"><span class="sw-label">Full booking</span><span class="sw-help">Off = read-only availability. On is stored and ready, but the clickable booking flow is not built yet — the page still renders read-only.</span></span></label>
+        <div class="filter-field span-all"><label>Session type for booking mode (used once that flow lands)</label><select data-field="eventTypeId"><option value="">—</option>${opts}</select></div>
+        <div class="span-all et-actions">
+          <button class="btn btn-sm" onclick="${isNew ? 'createClient()' : `saveClient('${esc(c.slug)}')`}">${isNew ? 'Add client' : 'Save'}</button>
+          <button class="ghost" onclick="cancelEditClient()">Cancel</button>
+        </div>
+      </div>`;
+  }
+
+  function readClientForm(root) {
+    const g = f => root.querySelector(`[data-field="${f}"]`);
+    return {
+      name: g('name').value.trim(),
+      note: g('note').value.trim(),
+      active: g('active').checked,
+      mode: g('mode').checked ? 'book' : 'view',
+      eventTypeId: g('eventTypeId').value
+    };
+  }
+
+  function editClient(slug) { clEditingSlug = slug; closeNewClient(); renderClients(); }
+  function cancelEditClient() { clEditingSlug = null; closeNewClient(); renderClients(); }
+
+  function startNewClient() {
+    clEditingSlug = '__new__';
+    const slot = document.getElementById('clNewSlot');
+    slot.innerHTML = `<div class="et-card cl-card editing" data-slug="__new__"><div class="et-head"><div><div class="et-title">New client</div></div></div>${clientFormHtml({}, true)}</div>`;
+    document.getElementById('clAddBtn').style.display = 'none';
+    renderClients();
+    slot.querySelector('[data-field="name"]').focus();
+  }
+  function closeNewClient() {
+    document.getElementById('clNewSlot').innerHTML = '';
+    document.getElementById('clAddBtn').style.display = '';
+    if (clEditingSlug === '__new__') clEditingSlug = null;
+  }
+
+  // Editing carries the slug, so the backend updates in place and the link
+  // already in a client's inbox keeps working.
+  async function saveClient(slug) {
+    const card = document.querySelector('.cl-card.editing');
+    if (!card) return;
+    const payload = readClientForm(card);
+    if (!payload.name) { showToast('Client name is required', 'error'); return; }
+    payload.slug = slug;
+    try {
+      const data = await adminFetch('admin-upsert-client', payload);
+      if (data.error) { showToast(data.error, 'error'); return; }
+      clEditingSlug = null;
+      await loadClientsTab();
+      showToast('Client saved', 'success');
+    } catch (err) { /* adminFetch handles auth failures */ }
+  }
+
+  // No slug on the way out — the backend slugs the name and de-duplicates.
+  async function createClient() {
+    const card = document.querySelector('#clNewSlot .cl-card');
+    if (!card) return;
+    const payload = readClientForm(card);
+    if (!payload.name) { showToast('Client name is required', 'error'); return; }
+    try {
+      const data = await adminFetch('admin-upsert-client', payload);
+      if (data.error) { showToast(data.error, 'error'); return; }
+      closeNewClient();
+      await loadClientsTab();
+      const newSlug = (data.client && data.client.slug) || '';
+      showToast(`Client added — now commit availability/${newSlug}/index.html to make the link resolve`, 'success');
+    } catch (err) { /* adminFetch handles auth failures */ }
+  }
 
   async function loadLeads() {
     const reqId = ++leadsReqId;

@@ -1,0 +1,88 @@
+/* Read-only per-client availability view.
+   Shared by every /availability/<slug>/ stub — see app.js.
+   Palette and type match the booking page; dark is the default theme,
+   [data-theme="light"] opts out, same convention as index.html. */
+
+:root{
+  --bg:#faf8f5; --panel:#ffffff; --surface:#f4f1ec; --border:#e2ded6;
+  --text:#17191d; --muted:#5c6370; --accent:#8f6a30;
+  --accent-soft:#8f6a3014; --accent-dim:#8f6a3033;
+  --shadow:0 1px 2px #17191d08, 0 12px 32px #17191d0f;
+  --avatar-bg:#1c4d3a; --avatar-text:#cda868;
+  --serif:'Playfair Display', Georgia, serif;
+  --sans:'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius:14px;
+}
+:root:not([data-theme="light"]){
+  --bg:#0a0e14; --panel:#10161f; --surface:#161d29; --border:#232c3a;
+  --text:#e6edf3; --muted:#8b98a5; --accent:#cda868;
+  --accent-soft:#cda86814; --accent-dim:#cda86833;
+  --shadow:0 0 0 1px #ffffff0d, 0 16px 40px #00000066;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:var(--sans);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+.wrap{max-width:720px;margin:0 auto;padding:32px 20px 64px;}
+
+/* ── header ─────────────────────────────────────────── */
+.head{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+.avatar{
+  width:46px;height:46px;border-radius:50%;background:var(--avatar-bg);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:var(--serif);font-size:17px;font-weight:600;color:var(--avatar-text);
+}
+h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0;line-height:1.25;}
+.sub{color:var(--muted);font-size:14.5px;margin:0 0 4px;}
+.meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+  margin:16px 0 26px;padding-top:16px;border-top:1px solid var(--border);
+  color:var(--muted);font-size:13px;
+}
+#asOf{white-space:nowrap;}
+#refreshBtn{
+  font:inherit;font-size:12.5px;font-weight:500;color:var(--accent);
+  background:transparent;border:1px solid var(--accent-dim);border-radius:999px;
+  padding:3px 12px;cursor:pointer;transition:background-color .15s;
+}
+#refreshBtn:hover{background:var(--accent-soft);}
+#refreshBtn[disabled]{opacity:.5;cursor:default;}
+
+/* ── day rows ───────────────────────────────────────── */
+.days{display:flex;flex-direction:column;gap:2px;}
+.day-row{
+  display:grid;grid-template-columns:130px 1fr;gap:16px;
+  padding:13px 14px;border-radius:10px;align-items:start;
+}
+.day-row:nth-child(odd){background:var(--surface);}
+.day-row.is-empty .day-times{color:var(--muted);}
+.day-label{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.day-name{font-weight:600;font-size:14.5px;}
+.day-date{color:var(--muted);font-size:12.5px;}
+.day-times{display:flex;flex-direction:column;gap:7px;min-width:0;}
+.range{display:flex;flex-direction:column;gap:1px;}
+.range-ist{font-size:15px;font-variant-numeric:tabular-nums;}
+.range-local{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;}
+.day-empty{font-size:14px;color:var(--muted);}
+
+/* ── states ─────────────────────────────────────────── */
+.muted{color:var(--muted);}
+#loading{padding:24px 0;}
+#errorState{
+  margin-top:28px;padding:22px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--panel);box-shadow:var(--shadow);
+}
+#errorState h2{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 6px;}
+#errorState p{margin:0;color:var(--muted);font-size:14.5px;}
+.foot{margin-top:34px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;}
+
+@media (max-width:560px){
+  .wrap{padding:24px 16px 48px;}
+  h1{font-size:21px;}
+  .day-row{grid-template-columns:1fr;gap:5px;padding:12px 12px;}
+  .day-label{flex-direction:row;align-items:baseline;gap:8px;}
+}

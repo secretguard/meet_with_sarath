@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Availability — Sarath G</title>
+<!-- Client availability view. This file is the TEMPLATE: every client folder
+     under /availability/ is a byte-identical copy of it, and app.js reads the
+     slug from the URL path. To onboard a client, copy this file to
+     /availability/<slug>/index.html — nothing inside needs editing.
+     When app.js or app.css changes, bump ?v= HERE AND IN EVERY CLIENT FOLDER
+     in the same commit: Cloudflare serves the old file for days otherwise. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/availability/app.css?v=20260924">
+</head>
+<body>
+<main id="app" class="wrap"><p id="loading" class="muted">Loading availability…</p></main>
+<div id="errorState" class="wrap" hidden></div>
+<script src="/config.js?v=20260918"></script>
+<script src="/availability/app.js?v=20260924"></script>
+</body>
+</html>
