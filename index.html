@@ -683,6 +683,37 @@ src="https://www.facebook.com/tr?id=1131377436123001&ev=PageView&noscript=1"
   const DEEP_LINK_TYPE = (PAGE_PARAMS.get('type') || '').trim();
   const FOCUS_MODE = !!DEEP_LINK_TYPE && PAGE_PARAMS.get('focus') === '1';
 
+  // ?g=<gate token> — an outreach link the operator sends by hand to a lead who
+  // qualified on /apply/ but never booked. It carries the same token /apply/
+  // would have left behind, so adopt it into localStorage and then strip it from
+  // the address bar: the token stays out of screenshots, out of anything the
+  // visitor copies out of the URL, and out of Referer headers to third parties.
+  // Nothing here is trusted — the payload is only read for the local expiry and
+  // the email prefill; the server verifies the signature when the booking lands.
+  (function adoptOutreachGate() {
+    const token = (PAGE_PARAMS.get('g') || '').trim();
+    if (!token) return;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[0].replace(/-/g, '+').replace(/_/g, '/')));
+      if (!payload.e || !payload.x) return;
+      localStorage.setItem('meetGate', JSON.stringify({ token: token, exp: payload.x, leadId: payload.l }));
+      // The email field is locked to the token's email on a gated booking, so
+      // keep an existing lead record only when it is the same person.
+      const existing = readStored('meetLead');
+      const sameLead = existing && String(existing.email || '').trim().toLowerCase() === payload.e;
+      localStorage.setItem('meetLead', JSON.stringify(sameLead
+        ? Object.assign({}, existing, { leadId: payload.l })
+        : { leadId: payload.l, email: payload.e }));
+    } catch (e) {
+      return; // malformed link: fall through to the /apply/ redirect below
+    }
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('g');
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    } catch (e) {}
+  })();
+
   function applyFocusHero(id) {
     const type = EVENT_TYPES[id];
     document.getElementById('focusTitle').textContent = type.label;

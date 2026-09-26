@@ -142,6 +142,8 @@
   .cell-muted{color:var(--muted);}
   #leadsTable a{color:var(--accent);text-decoration:none;border-bottom:1px solid transparent;}
   #leadsTable a:hover{border-color:var(--accent);}
+  .leads-note{margin:0 0 14px;color:var(--muted);font-size:12.5px;line-height:1.6;max-width:78ch;}
+  .leads-note strong{color:var(--text);font-weight:600;}
 
   /* Status/active pills — gold=good, red=negative, muted=neutral/in-between.
      Deliberately drawn only from tokens already in the palette (accent,
@@ -577,14 +579,15 @@
           <button class="btn btn-outline btn-sm" onclick="loadLeads()">Refresh</button>
         </div>
       </div>
+      <p class="leads-note">A lead who answered <strong>Ready to invest</strong> but never booked can't just be sent the calendar link — that call is gated, and a plain link bounces them back to /apply/. <strong>Copy link</strong> gives you their own booking link instead: it carries a gate token bound to their email, works for 30 days, and is useless to anyone they forward it to. The WhatsApp message already has it pasted in.</p>
       <div class="stats" id="leadsStrip"></div>
       <div class="table-wrap">
         <table id="leadsTable">
           <thead>
-            <tr><th>Lead</th><th>WhatsApp</th><th>Background</th><th>Stuck on</th><th>Role in 30–90d</th><th>Outcome</th><th>Source</th><th>Booked</th></tr>
+            <tr><th>Lead</th><th>WhatsApp</th><th>Booking link</th><th>Background</th><th>Stuck on</th><th>Role in 30–90d</th><th>Outcome</th><th>Source</th><th>Booked</th></tr>
           </thead>
           <tbody id="leadsBody">
-            <tr class="empty-row"><td colspan="8">Loading…</td></tr>
+            <tr class="empty-row"><td colspan="9">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1977,15 +1980,15 @@
   async function loadLeads() {
     const reqId = ++leadsReqId;
     const body = document.getElementById('leadsBody');
-    body.innerHTML = '<tr class="empty-row"><td colspan="8">Loading…</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="9">Loading…</td></tr>';
     try {
       const data = await adminFetch('admin-list-leads');
       if (reqId !== leadsReqId) return;
-      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="8">${esc(data.error)}</td></tr>`; return; }
+      if (data.error) { body.innerHTML = `<tr class="empty-row"><td colspan="9">${esc(data.error)}</td></tr>`; return; }
       leadsData = data.leads || [];
       renderLeads();
     } catch (err) {
-      if (reqId === leadsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="8">Could not load leads. Please try again.</td></tr>';
+      if (reqId === leadsReqId) body.innerHTML = '<tr class="empty-row"><td colspan="9">Could not load leads. Please try again.</td></tr>';
     }
   }
 
@@ -2013,7 +2016,7 @@
 
     const filter = document.getElementById('leadsOutcomeFilter').value;
     const rows = leadsData.filter(l => !filter || l.outcome === filter);
-    if (!rows.length) { body.innerHTML = '<tr class="empty-row"><td colspan="8">No leads yet.</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr class="empty-row"><td colspan="9">No leads yet.</td></tr>'; return; }
     const lab = c => LEAD_LABELS[c] || c;
     body.innerHTML = rows.map(l => {
       const oc = LEAD_OUTCOMES[l.outcome] || { label: l.outcome, cls: 'badge-inactive' };
@@ -2022,13 +2025,23 @@
         ? `<span class="badge badge-completed">Booked</span><div class="cell-secondary">${esc(((currentEventTypes.find(t => t.id === l.bookedType) || {}).label) || l.bookedType)}</div>`
         : '—';
       const firstName = String(l.name || '').trim().split(/\s+/)[0];
-      const waHref = waLink(l.whatsapp, `Hi ${firstName || 'there'}, this is Sarath — following up on your mentorship application.`);
+      // A "ready to invest" lead gets the booking link pasted straight into the
+      // follow-up message — that is the whole point of chasing them by hand.
+      const waText = l.bookingUrl
+        ? `Hi ${firstName || 'there'}, this is Sarath — following up on your mentorship application. Here is your private link to book the 1:1 Career Diagnostic Call: ${l.bookingUrl}
+
+It only works for this email address and is valid for 30 days.`
+        : `Hi ${firstName || 'there'}, this is Sarath — following up on your mentorship application.`;
+      const waHref = waLink(l.whatsapp, waText);
       const waCell = waHref
         ? `<a href="${waHref}" target="_blank" rel="noopener" title="Chat on WhatsApp">${esc(l.whatsapp)}</a>`
         : (l.whatsapp ? esc(l.whatsapp) : '—');
       return `<tr>
         <td data-label="Lead"><div class="cell-stack"><span class="cell-primary">${esc(l.name)}</span><span class="cell-secondary">${esc(l.email)}</span><span class="cell-tertiary">${formatCreatedAt(l.createdAt)}</span></div></td>
         <td data-label="WhatsApp">${waCell}</td>
+        <td data-label="Booking link">${l.bookingUrl
+          ? `<button type="button" class="btn btn-outline btn-sm" data-copy-url="${esc(l.bookingUrl)}">Copy link</button>`
+          : '<span class="cell-muted">—</span>'}</td>
         <td data-label="Background">${esc(lab(l.background))}</td>
         <td data-label="Stuck on">${esc(lab(l.bottleneck))}</td>
         <td data-label="Role in 30–90d">${esc(lab(l.goal))}</td>
@@ -2037,6 +2050,9 @@
         <td data-label="Booked">${bookedTxt}</td>
       </tr>`;
     }).join('');
+    body.querySelectorAll('[data-copy-url]').forEach(btn => {
+      btn.onclick = () => copyText(btn.getAttribute('data-copy-url'), 'Booking link');
+    });
   }
 
   // ============================================================
