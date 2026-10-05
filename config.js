@@ -1,5 +1,5 @@
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbw5pJWGFYGzIlp3ryNCZMM2_sB1G3q_CkC653vEcWT5XejJMyvnyJgWNpvKhrCQQgj6gQ/exec',
+  API_URL: 'https://api.meet.sarathg.me',
   RAZORPAY_KEY_ID: 'rzp_live_TPADM2b83cSu8Q',
   // Floating WhatsApp button on the booking page. Digits only, with country
   // code, no "+". Empty string hides the button. The text is the prefilled
