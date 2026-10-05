@@ -153,6 +153,9 @@
   .badge-cancelled{background:var(--red-dim);color:var(--red);}
   .badge-rescheduled{background:var(--border);color:var(--muted);}
   .badge-no-show{background:var(--red-dim);color:var(--red);}
+  /* The operator's own no-show: outlined, not filled, so it is instantly
+     distinguishable from the client's no-show above it. */
+  .badge-host-no-show{background:transparent;color:var(--red);box-shadow:inset 0 0 0 1px var(--red);}
   .badge-completed{background:var(--green-dim);color:var(--green);}
   .badge-active{background:var(--green-dim);color:var(--green);}
   .badge-inactive{background:var(--border);color:var(--muted);}
@@ -426,6 +429,7 @@
             <option value="cancelled">Cancelled</option>
             <option value="rescheduled">Rescheduled</option>
             <option value="no-show">No-show</option>
+            <option value="host-no-show">My no-show</option>
             <option value="completed">Completed</option>
           </select>
         </div>
@@ -976,6 +980,14 @@
     }
   }
 
+  // The raw status is the wire value; this is what a human should read.
+  // Only values that need rewording appear here -- anything else falls
+  // through to the status itself, as before.
+  const STATUS_LABELS = { 'host-no-show': 'my no-show' };
+  function statusLabel(status) {
+    return STATUS_LABELS[status] || status || 'confirmed';
+  }
+
   function renderBookingsPage() {
     const body = document.getElementById('bookingsBody');
     const pagination = document.getElementById('bookingsPagination');
@@ -1025,7 +1037,7 @@
             ${b.couponCode ? `<span class="cell-secondary">coupon ${esc(b.couponCode)}</span>` : ''}
           </div>
         </td>
-        <td data-label="Status"><span class="badge ${statusClass}">${esc(b.status)}</span></td>
+        <td data-label="Status"><span class="badge ${statusClass}">${esc(statusLabel(b.status))}</span></td>
         <td class="col-actions">
           <button class="row-menu-btn" data-event-id="${eventIdAttr}" data-event-type="${esc(b.type)}" data-name="${esc(b.name)}" data-email="${esc(b.email || '')}" data-status="${esc(b.status)}" data-past="${bookingIsPast(b) ? 1 : 0}" onclick="toggleRowMenu(event)" aria-label="Actions">&bull;&bull;&bull;</button>
         </td>
@@ -1080,7 +1092,16 @@
     // already started — the backend enforces both, this just hides the
     // option where it would only ever produce an error toast.
     const canMarkNoShow = isPast && (status === 'confirmed' || status === 'rescheduled' || status === 'completed');
-    const canMarkAttended = isPast && (status === 'confirmed' || status === 'rescheduled' || status === 'no-show');
+    // 'host-no-show' is included so that "I missed this one", clicked by
+    // mistake, has a way back -- it is the only route out of that status.
+    const canMarkAttended = isPast && (status === 'confirmed' || status === 'rescheduled'
+      || status === 'no-show' || status === 'host-no-show');
+    // "I missed this one" — the operator's OWN no-show, kept separate from the
+    // client's so it never pollutes the no-show rate. Same past-only rule, and
+    // 'no-show' is included so a session wrongly blamed on the client can be
+    // corrected. The backend enforces all of this too.
+    const canMarkHostNoShow = isPast && (status === 'confirmed' || status === 'rescheduled'
+      || status === 'completed' || status === 'no-show');
 
     menu.innerHTML = `
       ${canMarkAttended ? '<button data-action="attended">Mark attended</button>' : ''}
@@ -1091,11 +1112,16 @@
       <button data-action="invite-folio">Invite to Folio &rarr;</button>
       <div class="row-menu-divider"></div>
       ${canMarkNoShow ? '<button class="danger" data-action="no-show">Mark no-show</button>' : ''}
+      ${canMarkHostNoShow ? '<button class="danger" data-action="host-no-show">I missed this one</button>' : ''}
       <button class="danger" data-action="cancel">Cancel booking</button>
+      <div class="row-menu-divider"></div>
+      <button class="danger" data-action="delete">Delete permanently</button>
     `;
     menu.querySelector('[data-action="reschedule"]').onclick = () => { closeRowMenu(); openRescheduleModal(eventId, eventType, name); };
     if (canMarkAttended) menu.querySelector('[data-action="attended"]').onclick = () => { closeRowMenu(); adminMarkAttended(eventId); };
     if (canMarkNoShow) menu.querySelector('[data-action="no-show"]').onclick = () => { closeRowMenu(); adminMarkNoShow(eventId, name); };
+    if (canMarkHostNoShow) menu.querySelector('[data-action="host-no-show"]').onclick = () => { closeRowMenu(); adminMarkHostNoShow(eventId, name); };
+    menu.querySelector('[data-action="delete"]').onclick = () => { closeRowMenu(); adminDeleteBooking(eventId, name); };
     menu.querySelector('[data-action="resend-confirm"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'confirmation'); };
     menu.querySelector('[data-action="resend-reminder"]').onclick = () => { closeRowMenu(); adminResend(eventId, 'reminder'); };
     menu.querySelector('[data-action="cancel"]').onclick = () => { closeRowMenu(); adminCancelBooking(eventId); };
@@ -1169,6 +1195,36 @@
       if (data.error) { showToast(data.error, 'error'); return; }
       showToast('Marked as no-show — follow-up email sent.', 'success');
       await loadBookings();
+    } catch (err) {}
+  }
+
+  // The operator's OWN no-show. Separate status from the client's so it never
+  // counts against the no-show rate. The client gets an apology with a free
+  // rebook link; a paid session is NOT auto-refunded (they keep it, and a
+  // refund happens only if they ask).
+  async function adminMarkHostNoShow(eventId, name) {
+    if (!confirm(`Record this as YOUR no-show?\n\n${name || 'The client'} will get an apology email from you with a link to rebook free. Their session stays theirs and nothing is refunded automatically.\n\nThis does not count towards your client no-show rate.`)) return;
+    try {
+      const data = await adminFetch('admin-mark-host-no-show', { eventId });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast(data.apologySent ? 'Recorded — apology sent to the client.'
+        : 'Recorded, but the apology email did not send.', data.apologySent ? 'success' : 'error');
+      await loadBookings();
+      loadStats();
+    } catch (err) {}
+  }
+
+  // Hard delete — the replacement for deleting the row out of the Google Sheet,
+  // which is what used to clear test bookings and is no longer possible.
+  // Deliberately distinct from "Cancel booking": this emails NOBODY.
+  async function adminDeleteBooking(eventId, name) {
+    if (!confirm(`Delete ${name || 'this booking'} permanently?\n\nThe booking record AND its calendar event are removed, and NO email is sent to anyone. This cannot be undone.\n\nFor a real client you almost certainly want "Cancel booking" instead — that tells them.`)) return;
+    try {
+      const data = await adminFetch('admin-delete-booking', { eventId });
+      if (data.error) { showToast(data.error, 'error'); return; }
+      showToast('Deleted — no email sent.', 'success');
+      await loadBookings();
+      loadStats();
     } catch (err) {}
   }
 
